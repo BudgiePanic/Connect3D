@@ -36,15 +36,14 @@ public interface Board {
 	
 	/**
 	 * Adds a piece at a location if the placement is valid.
+	 * Height of placement is handled internally by the implementation.
 	 * Checks if the placement caused a player to win. 
 	 * Updates internal fields after a placement.
 	 * 
 	 * @param x 
-	 * 	x coordinate the piece should be placed at.
-	 * @param y
-	 *  y coordinate the piece should be placed at.
+	 * 	x coordinate the piece should be placed at. Lateral.
 	 * @param z
-	 *  z coordinate the piece should be placed at.
+	 *  z coordinate the piece should be placed at. Depth.
 	 * @param p
 	 * 	The piece that is being placed.
 	 * @return returns true if the placement succeeded, false if invalid placement.
@@ -53,7 +52,7 @@ public interface Board {
 	 * @throws IllegalStateException 
 	 *  Thrown if a piece is placed after the game has ended.
 	 */
-	public boolean placePieceAt( int x, int y, int z, Piece p) throws IllegalArgumentException, IllegalStateException;
+	public boolean placePieceAt( int x, int z, Piece p) throws IllegalArgumentException, IllegalStateException;
 	
 	/**
 	 * Get a piece at a location.
