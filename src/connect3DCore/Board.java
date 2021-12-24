@@ -50,8 +50,10 @@ public interface Board {
 	 * @return returns true if the placement succeeded, false if invalid placement.
 	 * @throws IllegalArgumentException 
 	 *  Throws exception if x,y,z specifies a location outside the board's range.
+	 * @throws IllegalStateException 
+	 *  Thrown if a piece is placed after someone has won.
 	 */
-	public boolean placePieceAt( int x, int y, int z, Piece p) throws IllegalArgumentException;
+	public boolean placePieceAt( int x, int y, int z, Piece p) throws IllegalArgumentException, IllegalStateException;
 	
 	/**
 	 * Get a piece at a location.
