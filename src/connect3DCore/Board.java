@@ -1,5 +1,7 @@
 package connect3DCore;
 
+import java.util.List;
+
 /**
  * Public facing board interface.
  * The board contains the internal representation of the connect3D game.
@@ -25,6 +27,12 @@ public interface Board {
 	 * @return The piece that won.
 	 */
 	public Piece getWinner();
+	
+	/**
+	 * If someone has won, this method will return the location of their winning pieces.
+	 * @return The location of the winning pieces OR an empty list if no one has won.
+	 */
+	public List<Tuple> getWinningPieceLocations();
 	
 	/**
 	 * Adds a piece at a location if the placement is valid.
