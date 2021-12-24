@@ -16,7 +16,6 @@ interface Direction {
 	 *  The next location in this direction.
 	 */
 	Tuple next(Tuple input);
-	
 	Direction IDENTITY = (t) -> new Tuple(t.x, t.y, t.z);
 	
 	Direction UP = (t) -> new Tuple(t.x, t.y + 1, t.z);
