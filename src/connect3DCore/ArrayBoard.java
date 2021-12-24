@@ -228,10 +228,8 @@ final class ArrayBoard implements Board {
 		if(isLocValid(next) && getPieceAt(next) == p) {
 			answer.add(next);
 			answer.addAll(countDirection(direction, next, p));
-			return answer;
-		} else {
-			return answer;
 		}
+		return answer;
 	}
 	
 	/**
