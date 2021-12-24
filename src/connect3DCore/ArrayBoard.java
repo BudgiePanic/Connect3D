@@ -1,16 +1,15 @@
 package connect3DCore;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import static java.util.Map.entry;
 import static connect3DCore.Piece.*;
 import static connect3DCore.Direction.*;
 
 /**
- * Implements board functionality using 3Dimesional array of Piece.
+ * Implements board functionality using 3Dimesional array of Pieces.
  * @author Benjamin
  *
  */
@@ -48,11 +47,11 @@ final class ArrayBoard implements Board {
 	/**
 	 * The location of the last piece that was placed.
 	 */
-	private int lastX, lastY, lastZ;
+	private Tuple lastLocation;
 	/**
-	 * The location of the piece that caused a player to make four in a row.
+	 * The locations of the pieces that caused a player to make four (or more) in a row.
 	 */
-	private int winnerX, winnerY, winnerZ;
+	private List<Tuple> winningPieceLocations;
 	/**
 	 * record the number of times the placePiece method is called.
 	 */
@@ -65,31 +64,39 @@ final class ArrayBoard implements Board {
 	 */
 	ArrayBoard(int dim){
 		if(dim < 4) {
-			throw new IllegalArgumentException("Minimum board size is four! ->"+dim);
+			throw new IllegalArgumentException("Minimum board size is four for \"four in a row\"! ->"+dim);
 		}
 		pieces = new Piece[dim][dim][dim];
-		Arrays.setAll(pieces, i -> EMPTY); //TODO needs testing
-		winnerX = -1;
-		winnerY = -1;
-		winnerZ = -1;
+		for(int x = 0; x < dim; x++) {
+			for(int y = 0; y < dim; y++) {
+				for(int z = 0; z < dim; z++) {
+					pieces[x][y][z] = EMPTY;
+				}
+			}
+		}
+		winningPieceLocations = List.of(); //default empty
 		
-		lastX = -1;
-		lastY = -1;
-		lastZ = -1;
+		lastLocation = new Tuple(-1,-1,-1);
 		
 		piecesPlaced = 0;
 	}
 
 	@Override
 	public boolean hasSomeoneWon() {
-		return winnerX != -1;
+		assert winningPieceLocations != null;
+		assert winningPieceLocations.isEmpty() ? true : (winningPieceLocations.size() >= 4);
+		
+		return !winningPieceLocations.isEmpty();
 	}
 
 	@Override
 	public Piece getWinner() {
 		if(hasSomeoneWon()) {
-			return pieces[winnerX][winnerY][winnerZ];
+			assert winningPieceLocations.isEmpty() == false;
+			Tuple w = winningPieceLocations.get(0);
+			return pieces[w.x][w.y][w.z];
 		} else {
+			assert winningPieceLocations.isEmpty() == true;
 			return EMPTY;
 		}
 	}
@@ -100,59 +107,92 @@ final class ArrayBoard implements Board {
 				+ "Valid range is: 0 ->"+(pieces.length-1));
 		return pieces[x][y][z];
 	}
+	
+	/**
+	 * Override of getPieceAt for Tuples
+	 * @param tuple
+	 *  the location we are retrieving from
+	 * @return
+	 *  the piece at the location
+	 */
+	private Piece getPieceAt(Tuple tuple) {
+		return getPieceAt(tuple.x, tuple.y, tuple.z);
+	}
 
 	@Override
 	public boolean isBoardFull() {
-		int d = pieces.length;
+		int d = pieces.length; //TODO needs testing.
 		return piecesPlaced == (d * d * d);
 	}
 
 	@Override
 	public boolean placePieceAt(int x, int y, int z, Piece p) throws IllegalArgumentException {
+		assert p != null;
 		if(!isLocValid(x, y, z)) throw new IllegalArgumentException(x+" "+y+" "+z+" is an invalid location!\n"
 			+ "Valid range is: 0 ->"+(pieces.length-1));
 		if(p == EMPTY) throw new IllegalArgumentException("Cannot place empty!");
 		if(pieces[x][y][z] != EMPTY) return false; //can't place on occupied area
 		
 		piecesPlaced++;
+		lastLocation = new Tuple(x,y,z);
+		pieces[x][y][z] = p; //actually assign the piece on the board.
 		
-		lastX = x;
-		lastY = y;
-		lastZ = z;
-		
-		pieces[x][y][z] = p;
-		
-		/*for(Function<tuple, tuple> dir : directions) {
-			if(hasSomeoneWon()) break;
-			countDirection(dir, new tuple(x,y,x), p);
-		}*/ //TODO sum complementary directions
-		countDirection(directions.get(0), new tuple(x,y,x), p, 0);
-		
-		Direction up = (t) -> new Tuple(t.x, t.y, t.z);
+		//This could be called from somewhere else because it is purely side effects.
+		winningPieceLocations = checkForWin(lastLocation); 
 		
 		return true;
 	}
 	
 	/**
-	 * Checks the location at lastX, lastY, lastZ and count how many instances of p lie in that direction.
-	 * Accomplishes this using recursion, looking in direction.
-	 * Continues recursing until it encounters EMPTY OR runs off the edge of the board.
-	 * @param direction
-	 *  The direction through the board this method uses to check for four in a row. 
-	 * @param t
-	 *  The location we should search from 
-	 * @param p 
-	 *  The piece type we are checking if they won
-	 * @param count 
-	 *  The number of p's we have encountered so far.
-	 * @return 
-	 *  The number of p on the direction.
+	 * Check each direction and see if there are any 'four in a rows' originating from point tuple.
+	 * @param tuple 
+	 *  The location to check from. Should be valid. Should not be empty.
+	 * @return
+	 *  A list of locations of pieces that comprise the winning 'four in a row'
+	 *  OR and empty list, if there is no four in a row.
 	 */
-	private int countDirection(Function<tuple, tuple> direction, tuple t, Piece p, int count) {
-		return -1;
+	private List<Tuple> checkForWin(Tuple tuple) {
+		assert isLocValid(tuple);
+		assert getPieceAt(tuple) != EMPTY;
+		Piece p = getPieceAt(tuple);
+		for(Map.Entry<Direction, Direction> e : directionsPairs.entrySet()) {
+			List<Tuple> result = 
+			countDirection(e.getKey(), tuple, p); //collect all "p" locations in direction one
+			result.addAll(countDirection(e.getValue(), tuple, p)); //collect all "p" locations in direction two
+			result.add(tuple); //collect the p at "this" location
+			if(result.size() >= 4) {
+				return result;
+			}
+		}
+		return List.of();
 	}
-	
-	
+
+	/**
+	 * Collects the locations of instances of 'p' in the given direction from point 't'.
+	 * Does NOT include the piece AT location 't'.
+	 * Continues recursing until it encounters non-p OR runs off the edge of the board.
+	 * @param direction
+	 *  The direction through the board this method uses to search for instances of p. 
+	 * @param t
+	 *  The location we should search from. Does not collect an instance AT location 't', if it exists.
+	 * @param p 
+	 *  The piece type we are collecting the locations of. Should NOT be EMPTY.
+	 * @return 
+	 *  The a list of locations that contain p in the given direction.
+	 *  List will be empty if there are no p in the given direction from location t.
+	 */
+	private List<Tuple> countDirection(Direction direction, Tuple t, Piece p) {
+		assert p != EMPTY;
+		List<Tuple> answer = new ArrayList<>();
+		Tuple next = direction.next(t);
+		if(isLocValid(next) && getPieceAt(next) == p) {
+			answer.add(next);
+			answer.addAll(countDirection(direction, next, p));
+			return answer;
+		} else {
+			return answer;
+		}
+	}
 	
 	/**
 	 * Check an x,y,z position is in the bounds of the board.
@@ -169,5 +209,20 @@ final class ArrayBoard implements Board {
 		return
 				x >= 0 && y >= 0 && z >= 0 &&
 				x < dim && y < dim && z < dim;
+	}
+	/**
+	 * Overload of isLocValid method.
+	 * @param tuple
+	 *  a location.
+	 * @return
+	 *  true if the location is valid for this board.
+	 */
+	private boolean isLocValid(Tuple tuple) {
+		return isLocValid(tuple.x, tuple.y, tuple.z);
+	}
+
+	@Override
+	public List<Tuple> getWinningPieceLocations() {
+		return new ArrayList<>(winningPieceLocations); //give a copy so outside forces can't change it.
 	}
 }
