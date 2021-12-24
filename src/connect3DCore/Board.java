@@ -15,7 +15,13 @@ public interface Board {
 	public boolean hasSomeoneWon();
 	
 	/**
-	 * Get the piece that won. Never returns EMPTY.
+	 * Returns whether the board can fit anymore pieces.
+	 * @return true if the board is full and cannot fit anymore pieces.
+	 */
+	public boolean isBoardFull();
+	
+	/**
+	 * Get the piece that won. returns EMPTY if there is no winner.
 	 * @return The piece that won.
 	 */
 	public Piece getWinner();
@@ -34,8 +40,10 @@ public interface Board {
 	 * @param p
 	 * 	The piece that is being placed.
 	 * @return returns true if the placement succeeded, false if invalid placement.
+	 * @throws IllegalArgumentException 
+	 *  Throws exception if x,y,z specifies a location outside the board's range.
 	 */
-	public boolean placePieceAt( int x, int y, int z, Piece p);
+	public boolean placePieceAt( int x, int y, int z, Piece p) throws IllegalArgumentException;
 	
 	/**
 	 * Get a piece at a location.
@@ -46,7 +54,9 @@ public interface Board {
 	 * @param z
 	 *  coordinate of the piece.
 	 * @return the piece at the location, may be EMPTY.
+	 * @throws IllegalArgumentException 
+	 *  Throws exception if x,y,z specifies a location outside the board's range.
 	 */
-	public Piece getPieceAt( int x, int y, int z);
+	public Piece getPieceAt(int x, int y, int z) throws IllegalArgumentException;
 	
 }
