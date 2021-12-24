@@ -128,6 +128,7 @@ final class ArrayBoard implements Board {
 	@Override
 	public boolean placePieceAt(int x, int y, int z, Piece p) throws IllegalArgumentException {
 		assert p != null;
+		if(hasSomeoneWon() || isBoardFull()) throw new IllegalStateException("Cannot place piece after game has ended");
 		if(!isLocValid(x, y, z)) throw new IllegalArgumentException(x+" "+y+" "+z+" is an invalid location!\n"
 			+ "Valid range is: 0 ->"+(pieces.length-1));
 		if(p == EMPTY) throw new IllegalArgumentException("Cannot place empty!");
