@@ -24,3 +24,6 @@ hs_err_pid*
 /bin/
 .classpath
 .project
+.checkstyle
+.settings/org.eclipse.jdt.core.prefs
+.settings/org.eclipse.jdt.ui.prefs
