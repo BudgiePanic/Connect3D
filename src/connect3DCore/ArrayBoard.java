@@ -80,6 +80,31 @@ final class ArrayBoard implements Board {
 		
 		piecesPlaced = 0;
 	}
+	
+	@Override
+	public boolean placePieceAt(int x, int z, Piece p) throws IllegalArgumentException, IllegalStateException {
+		int y = getNextFree(x,z);
+		return insertPieceAt(x, y, z, p);
+	}
+
+	/**
+	 * Helper method, looks at the (x,z) column and returns the next available Z value.
+	 * @param x
+	 *  The lateral component of the column being checked.
+	 * @param z
+	 *  The depth of the column being checked.
+	 * @return
+	 *  The Z value of the next free point in the (x,z) column.
+	 * @throws IllegalArgumentException
+	 *  Thrown if (x,z) column is full to signal to the caller that it is full.
+	 */
+	private int getNextFree(int x, int z) throws IllegalArgumentException {
+		//Start at y == 0 and work up until failure.
+		for(int y = 0; y < pieces.length; y++) {
+			if(getPieceAt(x, y, z) == EMPTY) return y;
+		}
+		throw new RuntimeException(); //make the compiler happy. Exception WILL be thrown earlier.
+	}
 
 	@Override
 	public boolean hasSomeoneWon() {
@@ -125,8 +150,22 @@ final class ArrayBoard implements Board {
 		return piecesPlaced == (d * d * d);
 	}
 
-	@Override
-	public boolean placePieceAt(int x, int y, int z, Piece p) throws IllegalArgumentException {
+	/**
+	 * Insert a piece onto the board at a specified location.
+	 * @param x
+	 *  The lateral component of the position.
+	 * @param y
+	 *  The height component of the position.
+	 * @param z
+	 *  The depth component of the position.
+	 * @param p
+	 *  The piece to be inserted.
+	 * @return
+	 *  True if the insertion succeeded. 
+	 * @throws IllegalArgumentException
+	 *  Thrown if an invalid piece or location is supplied.
+	 */
+	private boolean insertPieceAt(int x, int y, int z, Piece p) throws IllegalArgumentException {
 		assert p != null;
 		if(hasSomeoneWon() || isBoardFull()) throw new IllegalStateException("Cannot place piece after game has ended");
 		if(!isLocValid(x, y, z)) throw new IllegalArgumentException(x+" "+y+" "+z+" is an invalid location!\n"
