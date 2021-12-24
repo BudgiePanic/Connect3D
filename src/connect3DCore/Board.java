@@ -51,7 +51,7 @@ public interface Board {
 	 * @throws IllegalArgumentException 
 	 *  Throws exception if x,y,z specifies a location outside the board's range.
 	 * @throws IllegalStateException 
-	 *  Thrown if a piece is placed after someone has won.
+	 *  Thrown if a piece is placed after the game has ended.
 	 */
 	public boolean placePieceAt( int x, int y, int z, Piece p) throws IllegalArgumentException, IllegalStateException;
 	
