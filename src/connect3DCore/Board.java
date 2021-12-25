@@ -2,13 +2,15 @@ package connect3DCore;
 
 import java.util.List;
 
+import connect3DRender.Component;
+
 /**
  * Public facing board interface.
  * The board contains the internal representation of the connect3D game.
  * @author Benjamin
  *
  */
-public interface Board {
+public interface Board extends Component {
 	
 	/**
 	 * Query the board to see if a piece has won.
