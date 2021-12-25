@@ -101,7 +101,7 @@ final class ArrayBoard implements Board {
 	private int getNextFree(int x, int z) throws IllegalArgumentException {
 		//Start at y == 0 and work up until failure.
 		for(int y = 0; y < pieces.length; y++) {
-			if(getPieceAt(x, y, z) == EMPTY) return y;
+			if(isLocValid(x, y, z) && getPieceAt(x, y, z) == EMPTY) return y;
 		}
 		throw new RuntimeException(); //make the compiler happy. Exception WILL be thrown earlier.
 	}
