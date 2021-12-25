@@ -46,7 +46,7 @@ public interface Board {
 	 *  z coordinate the piece should be placed at. Depth.
 	 * @param p
 	 * 	The piece that is being placed.
-	 * @return returns true if the placement succeeded, false if invalid placement.
+	 * @return returns true if the placement succeeded, false if placement failed.
 	 * @throws IllegalArgumentException 
 	 *  Throws exception if x,y,z specifies a location outside the board's range.
 	 * @throws IllegalStateException 
