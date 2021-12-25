@@ -84,6 +84,7 @@ final class ArrayBoard implements Board {
 	@Override
 	public boolean placePieceAt(int x, int z, Piece p) throws IllegalArgumentException, IllegalStateException {
 		int y = getNextFree(x,z);
+		if(y < 0) return false;
 		return insertPieceAt(x, y, z, p);
 	}
 
@@ -103,7 +104,7 @@ final class ArrayBoard implements Board {
 		for(int y = 0; y < pieces.length; y++) {
 			if(getPieceAt(x, y, z) == EMPTY) return y;
 		}
-		throw new RuntimeException(); //make the compiler happy. Exception WILL be thrown earlier.
+		return -1;
 	}
 
 	@Override
