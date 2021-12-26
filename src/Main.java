@@ -34,7 +34,7 @@ public final class Main {
 		
 		new Game(RenderFactory.Renderer("text"), List.of(Piece.RED, Piece.BLUE)).run();
 		
-		System.out.println("Game complete? This message should display after the game is over...");
+		System.out.println("Game complete. Good Bye.");
 		
 	}
 }
