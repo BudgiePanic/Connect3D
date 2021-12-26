@@ -57,6 +57,17 @@ public interface Board extends Component {
 	public boolean placePieceAt( int x, int z, Piece p) throws IllegalArgumentException, IllegalStateException;
 	
 	/**
+	 * Check if an (x,z) column is valid for this board.
+	 * @param x
+	 *  The lateral location component.
+	 * @param z
+	 *  The depth location component.
+	 * @return
+	 *  True if this location is within the board.
+	 */
+	public boolean isXZvalid(int x, int z);
+	
+	/**
 	 * Get a piece at a location.
 	 * @param x
 	 * 	coordinate of the piece.
