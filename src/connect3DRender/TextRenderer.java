@@ -1,9 +1,11 @@
 package connect3DRender;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import connect3DCore.Piece;
 
@@ -17,7 +19,8 @@ public final class TextRenderer implements Renderer {
 	
 	/**
 	 * Don't ask for user input the first time the renderer is polled for input.
-	 * This is to ensure the board is drawn once, so the user can see something.
+	 * This is to ensure the board is drawn once, so the user can see something
+	 * before entering their input.
 	 */
 	private boolean firstTime;
 	
@@ -29,24 +32,49 @@ public final class TextRenderer implements Renderer {
 	/**
 	 * Observers who are interested in user events.
 	 */
-	private List<Observer> observers = new ArrayList<>(1);
+	private final List<Observer> observers = new ArrayList<>(1);
 	
 	/**
 	 * Components that this renderer is supposed to draw each redraw call.
 	 */
-	private List<Component> drawables = new ArrayList<>();
+	private final List<Component> drawables = new ArrayList<>();
 
 	/**
 	 * Remember if the initialize method has been called.
 	 */
 	private boolean initialized;
 	
+	/**
+	 * The active color. Used for drawing?
+	 */
+	private Piece activePiece;
+	
+	/**
+	 * Store the names of all the Face types at compile type.
+	 * Not sure if there is any better way to do this. At least it works.
+	 */
+	private static final List<String> faces = Collections.unmodifiableList(
+		List.of(Face.values()).stream()
+		.map(Face::name).collect(Collectors.toList())
+	);
+	
+	//not happy with this system at the moment.
+	//Could be replaced with a proper message passing system between the renderer and observers.
 	private int x,y,z;
 	private String inputType;
 	/**
 	 * Matches valid row column inputs
 	 */
-	private static Pattern inputPattern = Pattern.compile("\\d+ \\d+");
+	private static final Pattern inputPattern = Pattern.compile("\\d+ \\d+");
+	/**
+	 * Matches user program exit string
+	 */
+	private static final Pattern exitPattern = Pattern.compile(".*(exit)|(EXIT)|(Exit).*");
+	/**
+	 * Scanner to connect to system in and read user input.
+	 */
+	private Scanner in;
+	
 	
 	/**
 	 * Package-private constructor so only the renderer factory can generate them.
@@ -56,24 +84,28 @@ public final class TextRenderer implements Renderer {
 		this.initialized = false;
 	}
 	
-	// Can't draw 3D objects to command line
+	// Cylinder drawing not implemented for the text renderer
 	@Override
 	public void drawCylinderAt(int x, int y, int z, float radius, float height) {}
 
-	//
+	//Cube drawing not implemented for the text renderer.
 	@Override
-	public void drawCubeAt(int x, int y, int z, float width, float height) {
-		//TODO
-	}
+	public void drawCubeAt(int x, int y, int z, float width, float height) {}
 
 	// Can't draw 3D objects to command line
 	@Override
 	public void drawSphereAt(int x, int y, int z, float radius) {}
+	
+	@Override
+	public void drawMessage(String msg) {
+		if(msg == null) throw new IllegalArgumentException();
+		System.out.println(msg); //text based message drawing...
+	}
 
 	@Override
 	public void setActiveColor(Piece p) {
-		// TODO Auto-generated method stub
-
+		if(p == null) throw new IllegalArgumentException();
+		this.activePiece = p;
 	}
 
 	@Override
@@ -95,33 +127,83 @@ public final class TextRenderer implements Renderer {
 	@Override
 	public void initialize() throws InitializationException { 
 		this.initialized = true;
+		this.activePiece = Piece.EMPTY;
 		this.x = -1; //put some default values into the user input fields
 		this.y = -1;
 		this.z = -1;
 		this.inputType = "";
+		in = new Scanner(System.in);
+	}
+	
+	@Override
+	public void destroy() {
+		if(this.in != null) {
+			this.in.close();
+		}
+		this.initialized = false;
 	}
 
 	@Override
 	public void pollEvents() throws IllegalStateException {
 		if(!initialized) throw new IllegalStateException("Renderer not initialized");
 		if(!firstTime) {
-			firstTime = false;
-			
-			//TODO
-			//Ask the user for an input
-			//Parse the input
-			System.out.print("Your move :>");
-			
-			
-			//Notify observers of the input, if the input was worthy of notification.
-			//Respond to the input
-			
+			while (true) {
+				System.out.println("Your move:");
+				String userTyped = in.nextLine();
+				if (inputPattern.matcher(userTyped).find()) {
+					System.out.println("number patt");
+					if(handlePlacement(userTyped)) {
+						System.out.println("number patt exec");
+						notifyObservers();
+						break;	
+					}
+				} else if (exitPattern.matcher(userTyped).find()) {
+					this.inputType = "EXIT";
+					notifyObservers();
+					break;
+				} else {
+					if (faces.contains(userTyped)) {
+						face = Face.valueOf(userTyped);
+						System.out.println("Face: "+this.face.name());
+					}
+				} 
+			}
 		}
+		firstTime = false;
+	}
+
+	/**
+	 * Helper method for user input handling.
+	 * Handle the case of user entering a location to place a piece on the board.
+	 * @param next
+	 *  The text input the user typed.
+	 * @return 
+	 *  True if the string could be parsed into two separate integers.
+	 */
+	private boolean handlePlacement(String next) {
+		//extract the two numbers from the string
+		//put them into the x,y fields
+		String[] numbs = next.split(" ");
+		assert numbs.length == 2;
+		try {
+			this.x = Integer.parseInt(numbs[0]);
+			this.z = Integer.parseInt(numbs[1]);
+		} catch (NumberFormatException e) {
+			return false;
+		}
+		//update the message type field
+		this.inputType = "PLACE";
+		return true;
 	}
 
 	@Override
 	public void redraw() throws IllegalStateException {
-		
+		//staged drawing, get all the components draw requests
+		for(Component c : drawables) {
+			c.draw(this);
+		}
+		//handle the draw requests based on the face
+		face.paint();
 	}
 
 	@Override
@@ -141,35 +223,35 @@ public final class TextRenderer implements Renderer {
 			@Override
 			void paint() {
 				// TODO Auto-generated method stub
-				
+				System.out.println("Drawing not implemented yet :(");
 			}
 		},
 		BACK {
 			@Override
 			void paint() {
 				// TODO Auto-generated method stub
-				
+				System.out.println("Drawing not implemented yet :(");
 			}
 		},
 		LEFT {
 			@Override
 			void paint() {
 				// TODO Auto-generated method stub
-				
+				System.out.println("Drawing not implemented yet :(");
 			}
 		},
 		RIGHT {
 			@Override
 			void paint() {
 				// TODO Auto-generated method stub
-				
+				System.out.println("Drawing not implemented yet :(");
 			}
 		},
 		TOP {
 			@Override
 			void paint() {
 				// TODO Auto-generated method stub
-				
+				System.out.println("Drawing not implemented yet :(");
 			}
 		};
 		
@@ -178,5 +260,4 @@ public final class TextRenderer implements Renderer {
 		 */
 		abstract void paint();
 	}
-
 }
