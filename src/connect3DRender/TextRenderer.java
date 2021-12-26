@@ -163,7 +163,7 @@ public final class TextRenderer implements Renderer {
 				//Update the face if the user typed one.
 				if (faces.contains(userTyped)) {
 					face = Face.valueOf(userTyped);
-					System.out.println("Face: "+this.face.name());
+					drawMessage("Face: "+this.face.name());
 				}
 			} 
 		}
