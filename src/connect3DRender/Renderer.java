@@ -16,6 +16,11 @@ public interface Renderer extends Graphics, Subject {
 	public void initialize() throws InitializationException;
 	
 	/**
+	 * Release any resources the renderer is using disposal.
+	 */
+	public void destroy();
+	
+	/**
 	 * Respond to any user input this frame.
 	 * Notify observers of relevant events. 
 	 * Such as updating the camera location in response to a mouse drag
