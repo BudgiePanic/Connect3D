@@ -147,27 +147,25 @@ public final class TextRenderer implements Renderer {
 	public void pollEvents() throws IllegalStateException {
 		if(!initialized) throw new IllegalStateException("Renderer not initialized");
 		if(!firstTime) {
-			while (true) {
-				System.out.println("Your move:");
-				String userTyped = in.nextLine();
-				if (inputPattern.matcher(userTyped).find()) {
-					System.out.println("number patt");
-					if(handlePlacement(userTyped)) {
-						System.out.println("number patt exec");
-						notifyObservers();
-						break;	
-					}
-				} else if (exitPattern.matcher(userTyped).find()) {
-					this.inputType = "EXIT";
-					notifyObservers();
-					break;
-				} else {
-					if (faces.contains(userTyped)) {
-						face = Face.valueOf(userTyped);
-						System.out.println("Face: "+this.face.name());
-					}
-				} 
-			}
+			System.out.println("Your move:");
+			String userTyped = in.nextLine();
+			//Handle the user input
+			if (inputPattern.matcher(userTyped).find()) {
+				//Try to parse two numbers
+				if(handlePlacement(userTyped)) {
+					notifyObservers(); //notify if successfully parsed input into numbers.
+				}
+			} else if (exitPattern.matcher(userTyped).find()) {
+				//Notify if the user typed exit.
+				this.inputType = "EXIT";
+				notifyObservers();
+			} else {
+				//Update the face if the user typed one.
+				if (faces.contains(userTyped)) {
+					face = Face.valueOf(userTyped);
+					System.out.println("Face: "+this.face.name());
+				}
+			} 
 		}
 		firstTime = false;
 	}
@@ -198,10 +196,12 @@ public final class TextRenderer implements Renderer {
 
 	@Override
 	public void redraw() throws IllegalStateException {
-		//staged drawing, get all the components draw requests
+		//staged drawing, get all the components to draw
+		//Their draw calls are stored as requests
 		for(Component c : drawables) {
 			c.draw(this);
 		}
+		
 		//handle the draw requests based on the face
 		face.paint();
 	}
