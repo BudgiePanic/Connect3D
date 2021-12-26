@@ -260,4 +260,49 @@ public final class TextRenderer implements Renderer {
 		 */
 		abstract void paint();
 	}
+	
+	/**
+	 * The types of geometry primitives that the renderer needs to be able to draw.
+	 * @author Benjamin
+	 *
+	 */
+	private static enum Type {
+		CYLINDER,
+		CUBE,
+		SPHERE
+	}
+	
+	/**
+	 * Encapsulate a drawing request into a comparable object.
+	 * Allows sorting of scene objects. 
+	 * Could help create a scene graph.
+	 * @author Benjamin
+	 *
+	 */
+	private static class Draw implements Comparable<Draw> {
+		/**
+		 * Lateral location of the object being drawn
+		 */
+		final int x;
+		/**
+		 * Height location of the object being drawn
+		 */
+		final int y;
+		/**
+		 * depth location of the object being drawn
+		 */
+		final int z;
+		
+		
+		Draw(int x, int y, int z, Type t){
+			
+		}
+		
+		@Override
+		public int compareTo(Draw o) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+		
+	}
 }
