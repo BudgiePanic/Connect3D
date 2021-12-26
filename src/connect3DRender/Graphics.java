@@ -57,6 +57,13 @@ public interface Graphics{
 	 *  the 'size' of the sphere.
 	 */
 	void drawSphereAt(int x, int y, int z, float radius);
+	
+	/**
+	 * Draws a message to the UI
+	 * @param msg
+	 *  The message that will be shown.
+	 */
+	void drawMessage(String msg);
 
 	/**
 	 * Change the color that an object will be drawn in.
