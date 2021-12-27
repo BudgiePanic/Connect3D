@@ -104,11 +104,28 @@ public final class TextRenderer implements Renderer {
 	private int b;
 	
 	/**
-	 * Package-private constructor so only the renderer factory can generate them.
+	 * The current screen space a.
+	 * if this value changes by more than one between draws, extra spaces should be drawn.
 	 */
-	TextRenderer(){
+	private int a;
+	
+	/**
+	 * The number of rows, columns that the board has.
+	 * The text renderer specifically needs to know this information to draw the board
+	 * from different faces.
+	 */
+	private final int dimension;
+	
+	/**
+	 * Package-private constructor so only the renderer factory can generate them.
+	 * @param dimension
+	 *  The dimension of the board that this renderer will be drawing.
+	 */
+	TextRenderer(int dimension){
 		this.firstTime = true;
 		this.initialized = false;
+		assert dimension >= 4;
+		this.dimension = dimension;
 	}
 	
 	// Cylinder drawing not implemented for the text renderer
@@ -234,15 +251,22 @@ public final class TextRenderer implements Renderer {
 		}
 		//process the draw requests
 		for(Draw w : drawRequests) {
-			face.addToScreenTable(w, this);
+			face.addToDrawTable(w, this);
 		}
 		List<Draw> sortedReqs = drawTable.values().stream().
-				sorted().collect(Collectors.toList());
-		if(sortedReqs.isEmpty()) return;
+				sorted().collect(Collectors.toList()); //TODO needs testing lol
+		// check there is something to draw
+		if(sortedReqs.isEmpty()) return; 
 		//execute the draw requests TODO
 			//initialize the b value based on the first request
+			//initialize the a value
 			//Go through the sorted requests.
-			//if a 'b' value changes, add a new line to the string builder {done via draw comparable method...}
+			//convert draw request location to screen space, based on FACE.
+			//if a 'b' value changes, add a new line to the string builder
+			//if the 'a' value changes by more than one, add padding spaces.
+		for(Draw d : sortedReqs) {
+			
+		}
 	}
 
 	@Override
@@ -252,7 +276,7 @@ public final class TextRenderer implements Renderer {
 	public boolean removeComponent(Component c) { return this.drawables.remove(c); }
 	
 	/**
-	 * Helper method for addToDrawTable;
+	 * Helper method for addToDrawTable in FACE;
 	 * @param c
 	 *  the location we are checking to see if there is a draw request at.
 	 * @return
@@ -263,15 +287,18 @@ public final class TextRenderer implements Renderer {
 	}
 	
 	/**
-	 * Helper method for addToDrawTable
+	 * Helper method for addToDrawTable in FACE
+	 * @param c
+	 *  The location that is being overwritten / added to 
 	 * @param d
+	 *  The draw request for that location
 	 */
 	private void addToDrawTable(Coord c, Draw d) {
 		this.drawTable.put(c, d);
 	}
 	
 	/**
-	 * The faces of the board that can be drawn.
+	 * The faces of the board that can be drawn from.
 	 * Draw the board differently based on the face.
 	 * @author Benjamin
 	 *
@@ -308,7 +335,7 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToScreenTable(Draw d, TextRenderer r) {
+			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = new Coord(d.x, d.y); //translate the draw to render space.
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null &&
@@ -349,7 +376,7 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToScreenTable(Draw d, TextRenderer r) {
+			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = new Coord(d.x, d.y); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null && //overwrite the map value if it is closer
@@ -391,7 +418,7 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToScreenTable(Draw d, TextRenderer r) {
+			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = new Coord(d.z, d.y); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null && //overwrite the map value if it is closer
@@ -433,7 +460,7 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToScreenTable(Draw d, TextRenderer r) {
+			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = new Coord(d.z, d.y); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null && //overwrite the map value if it is closer
@@ -474,7 +501,7 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToScreenTable(Draw d, TextRenderer r) {
+			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = new Coord(d.x, d.z); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null && //overwrite the map value if it is closer
@@ -524,7 +551,7 @@ public final class TextRenderer implements Renderer {
 		 * Reference to the renderer. Because enums are static we can't look at the runtime instance
 		 * of the renderer unless we give the reference manually.
 		 */
-		abstract void addToScreenTable(Draw d, TextRenderer r);
+		abstract void addToDrawTable(Draw d, TextRenderer r);
 	}
 	
 	/**
