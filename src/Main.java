@@ -31,8 +31,8 @@ public final class Main {
 		System.out.println("Currently hard coded for two player games only!");
 		System.out.println("Game configuration coming later.");
 		System.out.println("Starting the game...");
-		
-		new Game(RenderFactory.Renderer("text"), List.of(Piece.RED, Piece.BLUE)).run();
+		int board_size = 4;
+		new Game(RenderFactory.Renderer("text", board_size), List.of(Piece.RED, Piece.BLUE), board_size).run();
 		
 		System.out.println("Game complete. Good Bye.");
 		
