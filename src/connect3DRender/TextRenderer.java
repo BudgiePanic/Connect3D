@@ -371,6 +371,10 @@ public final class TextRenderer implements Renderer {
 			int compare(Draw d1, Draw d2) {
 				//render higher draws first
 				//if height is equal, render bigger z values first
+				if(d1.y > d2.y) return 1;
+				if(d1.y < d2.y) return -1;
+				if(d1.z > d2.z) return 1;
+				if(d1.z < d2.z) return -1;
 				throw new RuntimeException("Exhausted all comparison options while sorting\n"
 						+ "LEFT: "+d1+"\n"+d2);
 			}
@@ -409,6 +413,10 @@ public final class TextRenderer implements Renderer {
 			int compare(Draw d1, Draw d2) {
 				//render taller requests first
 				//if the height is the same, render smaller Z's first
+				if(d1.y > d2.y) return 1;
+				if(d1.y < d2.y) return -1;
+				if(d1.z < d2.z) return 1;
+				if(d1.z > d2.z) return -1;
 				throw new RuntimeException("Exhausted all comparison options while sorting\n"
 						+ "RIGHT: "+d1+"\n"+d2);
 			}
@@ -447,6 +455,10 @@ public final class TextRenderer implements Renderer {
 			int compare(Draw d1, Draw d2) {
 				//render bigger Z's first
 				//if the Z is equal, render smaller x's first
+				if(d1.z > d2.z) return 1;
+				if(d1.z < d2.z) return -1;
+				if(d1.x < d2.x) return 1;
+				if(d1.x > d2.x) return -1; 
 				throw new RuntimeException("Exhausted all comparison options while sorting\n"
 						+ "TOP: "+d1+"\n"+d2);
 			}
