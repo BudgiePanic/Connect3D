@@ -230,14 +230,24 @@ public final class TextRenderer implements Renderer {
 		 * viewing the game from the front.
 		 * If the X and Y values are the same
 		 * then sort based off the z depth.
+		 * Closer Z draws will be kept.
+		 * Small Z values = closer.
 		 */
 		FRONT {
 			@Override
 			int compare(Draw d1, Draw d2) {
+				//TODO implemented generated method.
+				return 0;
+			}
+
+			@Override
+			int cull(Draw d1, Draw d2) {
 				if(d1.x == d2.x &&
 						d1.y == d1.y) {
-					
+					if(d1.z < d2.z) return 1; //d1 is closer, keep it
+					return -1; //d2 must be closer, keep d2
 				}
+				//else: draw requests aren't related.
 				return 0;
 			}
 		},
@@ -248,6 +258,12 @@ public final class TextRenderer implements Renderer {
 			
 			@Override
 			int compare(Draw d1, Draw d2) {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			int cull(Draw d1, Draw d2) {
 				// TODO Auto-generated method stub
 				return 0;
 			}
@@ -263,6 +279,12 @@ public final class TextRenderer implements Renderer {
 				// TODO Auto-generated method stub
 				return 0;
 			}
+
+			@Override
+			int cull(Draw d1, Draw d2) {
+				// TODO Auto-generated method stub
+				return 0;
+			}
 			
 		},
 		/**
@@ -272,6 +294,12 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int compare(Draw d1, Draw d2) {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			int cull(Draw d1, Draw d2) {
 				// TODO Auto-generated method stub
 				return 0;
 			}
@@ -287,8 +315,23 @@ public final class TextRenderer implements Renderer {
 				// TODO Auto-generated method stub
 				return 0;
 			}
+
+			@Override
+			int cull(Draw d1, Draw d2) {
+				// TODO Auto-generated method stub
+				return 0;
+			}
 			
 		};
+		
+		/**
+		 * When drawing, the rasterizer(System.out lol) goes from top left to bottom right.
+		 * Sort the draw requests to ensure the draws happen in the correct order.
+		 * @param d1
+		 * @param d2
+		 * @return
+		 */
+		abstract int compare(Draw d1, Draw d2);
 		
 		/**
 		 * Compare two draw requests to see which one goes in front.
@@ -297,11 +340,11 @@ public final class TextRenderer implements Renderer {
 		 * @param d2 
 		 *  The second draw request
 		 * @return 
-		 *  +ve means d1 goes in front and should be kept
-		 *  -ve means d2 goes in back and should not be drawn
+		 *  +ve means d1 goes in front and should be kept.
+		 *  -ve means d2 goes in back and should not be drawn.
 		 *  0 means it doesn't matter as their draws won't interfere with each other.
 		 */
-		abstract int compare(Draw d1, Draw d2);
+		abstract int cull(Draw d1, Draw d2);
 	}
 	
 	/**
@@ -323,7 +366,7 @@ public final class TextRenderer implements Renderer {
 	 * @author Benjamin
 	 *
 	 */
-	private class Draw implements Comparable<Draw> {
+	class Draw implements Comparable<Draw> {
 		/**
 		 * Lateral location of the object being drawn
 		 */
