@@ -38,6 +38,11 @@ public final class TextRenderer implements Renderer {
 	 * Components that this renderer is supposed to draw each redraw call.
 	 */
 	private final List<Component> drawables = new ArrayList<>();
+	
+	/**
+	 * Store the draw requests that are made by the renderable components.
+	 */
+	private final List<Draw> drawRequests = new ArrayList<>();
 
 	/**
 	 * Remember if the initialize method has been called.
@@ -92,9 +97,11 @@ public final class TextRenderer implements Renderer {
 	@Override
 	public void drawCubeAt(int x, int y, int z, float width, float height) {}
 
-	// Can't draw 3D objects to command line
 	@Override
-	public void drawSphereAt(int x, int y, int z, float radius) {}
+	public void drawSphereAt(int x, int y, int z, float radius) {
+		//Currently ignoring radius. It's just a unit sphere.
+		drawRequests.add(new Draw(x,y,z,Type.SPHERE, activePiece));
+	}
 	
 	@Override
 	public void drawMessage(String msg) {
@@ -196,14 +203,14 @@ public final class TextRenderer implements Renderer {
 
 	@Override
 	public void redraw() throws IllegalStateException {
-		//staged drawing, get all the components to draw
-		//Their draw calls are stored as requests
+		//staged drawing.
+		this.drawRequests.clear();
+		//Component's draw calls are stored as requests
 		for(Component c : drawables) {
 			c.draw(this);
 		}
-		
-		//handle the draw requests based on the face
-		face.paint();
+		//process(sort) the draw requests
+		//execute the draw requests
 	}
 
 	@Override
@@ -219,46 +226,82 @@ public final class TextRenderer implements Renderer {
 	 *
 	 */
 	private static enum Face{
+		/**
+		 * viewing the game from the front.
+		 * If the X and Y values are the same
+		 * then sort based off the z depth.
+		 */
 		FRONT {
 			@Override
-			void paint() {
-				// TODO Auto-generated method stub
-				System.out.println("Drawing not implemented yet :(");
+			int compare(Draw d1, Draw d2) {
+				if(d1.x == d2.x &&
+						d1.y == d1.y) {
+					
+				}
+				return 0;
 			}
 		},
+		/**
+		 * viewing the game from behind
+		 */
 		BACK {
+			
 			@Override
-			void paint() {
+			int compare(Draw d1, Draw d2) {
 				// TODO Auto-generated method stub
-				System.out.println("Drawing not implemented yet :(");
+				return 0;
 			}
+			
 		},
+		/**
+		 * viewing the game from the left
+		 */
 		LEFT {
+			
 			@Override
-			void paint() {
+			int compare(Draw d1, Draw d2) {
 				// TODO Auto-generated method stub
-				System.out.println("Drawing not implemented yet :(");
+				return 0;
 			}
+			
 		},
+		/**
+		 * viewing the game from the right.
+		 */
 		RIGHT {
+
 			@Override
-			void paint() {
+			int compare(Draw d1, Draw d2) {
 				// TODO Auto-generated method stub
-				System.out.println("Drawing not implemented yet :(");
+				return 0;
 			}
+			
 		},
+		/**
+		 * Viewing the game from a 'birds eye view' perspective
+		 */
 		TOP {
+
 			@Override
-			void paint() {
+			int compare(Draw d1, Draw d2) {
 				// TODO Auto-generated method stub
-				System.out.println("Drawing not implemented yet :(");
+				return 0;
 			}
+			
 		};
 		
 		/**
-		 * Repaint the components based on the selected face.
+		 * Compare two draw requests to see which one goes in front.
+		 * @param d1 
+		 *  The first draw request
+		 * @param d2 
+		 *  The second draw request
+		 * @return 
+		 *  +ve means d1 goes in front and should be kept
+		 *  -ve means d2 goes in back and should not be drawn
+		 *  0 means it doesn't matter as their draws won't interfere with each other.
 		 */
-		abstract void paint();
+		abstract int compare(Draw d1, Draw d2);
 	}
 	
 	/**
@@ -274,12 +317,13 @@ public final class TextRenderer implements Renderer {
 	
 	/**
 	 * Encapsulate a drawing request into a comparable object.
-	 * Allows sorting of scene objects. 
+	 * Allows sorting of scene objects. Uses the strategy pattern to dynamically 
+	 * sort based on the FACE. Immutable type;
 	 * Could help create a scene graph.
 	 * @author Benjamin
 	 *
 	 */
-	private static class Draw implements Comparable<Draw> {
+	private class Draw implements Comparable<Draw> {
 		/**
 		 * Lateral location of the object being drawn
 		 */
@@ -292,16 +336,32 @@ public final class TextRenderer implements Renderer {
 		 * depth location of the object being drawn
 		 */
 		final int z;
+		/**
+		 * The color this geometry primitive will be.
+		 */
+		final Piece color;
+		/**
+		 * The type of geometry that will be drawn.
+		 */
+		final Type type;
 		
-		
-		Draw(int x, int y, int z, Type t){
-			
+		/**
+		 * 
+		 * @param x
+		 * @param y
+		 * @param z
+		 * @param t
+		 * @param color
+		 */
+		Draw(int x, int y, int z, Type t, Piece color){
+			assert t != null; assert color != null;
+			this.x = x; this.y = y; this.z = z;
+			this.type = t; this.color = color;
 		}
 		
 		@Override
 		public int compareTo(Draw o) {
-			// TODO Auto-generated method stub
-			return 0;
+			return TextRenderer.this.face.compare(this, o);
 		}
 		
 	}
