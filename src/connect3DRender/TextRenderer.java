@@ -255,7 +255,9 @@ public final class TextRenderer implements Renderer {
 			face.addToDrawTable(w, this);
 		}
 		List<Draw> sortedReqs = drawTable.values().stream().
-				sorted().collect(Collectors.toList()); //TODO needs testing lol TODO
+				collect(Collectors.toList()); //TODO needs testing lol TODO
+		Collections.sort(sortedReqs);
+		Collections.reverse(sortedReqs);
 		if(sortedReqs.isEmpty()) return; 
 		//execute the draw requests TODO
 			//initialize the b value based on the first request
