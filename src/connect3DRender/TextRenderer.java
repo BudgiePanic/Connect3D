@@ -446,9 +446,8 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && //overwrite the map value if it is closer
-						d.cull(prev) > 0) {
-					r.addToDrawTable(coord, d);
+				if(prev != null) {
+					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -495,9 +494,8 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && //overwrite the map value if it is closer
-						d.cull(prev) > 0) {
-					r.addToDrawTable(coord, d);
+				if(prev != null) {
+					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -543,9 +541,8 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && //overwrite the map value if it is closer
-						d.cull(prev) > 0) {
-					r.addToDrawTable(coord, d);
+				if(prev != null) {
+					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
