@@ -231,8 +231,8 @@ public final class TextRenderer implements Renderer {
 		for(Draw w : drawRequests) {
 			face.addToScreenTable(w, this);
 		}
-		//Sort the draw requests TODO
-			//get the values out of the map and sort them. 
+		List<Draw> sortedReqs = drawTable.values().stream().
+				sorted().collect(Collectors.toList());
 		//execute the draw requests TODO
 			//Go through the sorted requests.
 			//if a 'a' value changes, add a new line to the string builder {done via draw comparable method...}
@@ -485,7 +485,7 @@ public final class TextRenderer implements Renderer {
 		 *  The draw request being put into the draw table.
 		 * @param r 
 		 * Reference to the renderer. Because enums are static we can't look at the runtime instance
-		 * of the renderer unless we give it a reference.
+		 * of the renderer unless we give the reference manually.
 		 */
 		abstract void addToScreenTable(Draw d, TextRenderer r);
 	}
@@ -579,7 +579,9 @@ public final class TextRenderer implements Renderer {
 		/**
 		 * A new Coord.
 		 * @param a
+		 *  The 'x' in traditional screen space.
 		 * @param b
+		 *  The 'y' in traditional screen space.
 		 */
 		Coord(int a,int b){
 			this.a = a; this.b = b;
