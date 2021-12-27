@@ -356,8 +356,10 @@ public final class TextRenderer implements Renderer {
 				Coord coord = d.toRenderSpace(); //translate the draw to render space.
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null) {
-					//overwrite the map value
-					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
+					//overwrite the map value if d is closer to camera
+					//or the previous entry is transparent.
+					if(d.cull(prev) > 0 ||
+							prev.color == Piece.EMPTY) r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -401,7 +403,7 @@ public final class TextRenderer implements Renderer {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null) {
-					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
+					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -449,7 +451,7 @@ public final class TextRenderer implements Renderer {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null) {
-					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
+					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -497,7 +499,7 @@ public final class TextRenderer implements Renderer {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null) {
-					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
+					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -544,7 +546,7 @@ public final class TextRenderer implements Renderer {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null) {
-					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
+					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
