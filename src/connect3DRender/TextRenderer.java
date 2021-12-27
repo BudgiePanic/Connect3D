@@ -97,6 +97,11 @@ public final class TextRenderer implements Renderer {
 	 */
 	private Scanner in;
 	
+	/**
+	 * The current screen space b.
+	 * If this value changes, then the rasterizer should start drawing on a new line.
+	 */
+	private int b;
 	
 	/**
 	 * Package-private constructor so only the renderer factory can generate them.
@@ -233,9 +238,11 @@ public final class TextRenderer implements Renderer {
 		}
 		List<Draw> sortedReqs = drawTable.values().stream().
 				sorted().collect(Collectors.toList());
+		if(sortedReqs.isEmpty()) return;
 		//execute the draw requests TODO
+			//initialize the b value based on the first request
 			//Go through the sorted requests.
-			//if a 'a' value changes, add a new line to the string builder {done via draw comparable method...}
+			//if a 'b' value changes, add a new line to the string builder {done via draw comparable method...}
 	}
 
 	@Override
@@ -280,8 +287,14 @@ public final class TextRenderer implements Renderer {
 		FRONT {
 			@Override
 			int compare(Draw d1, Draw d2) {
-				//TODO implemented generated method.
-				return 0;
+				//send higher y values to be rendered first
+				//if height is equal, render smaller x values first
+				if(d1.y > d2.y) return 1;
+				if(d1.y < d2.y) return -1;
+				if(d1.x < d2.x) return 1;
+				if(d1.x > d2.x) return -1;
+				throw new RuntimeException("Exhausted all comparison options while sorting\n"
+						+ "FRONT: "+d1+"\n"+d2);
 			}
 
 			@Override
@@ -315,8 +328,14 @@ public final class TextRenderer implements Renderer {
 			
 			@Override
 			int compare(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
-				return 0;
+				//higher y values should be drawn first
+				//if height is the same, draw bigger x values first.
+				if(d1.y > d2.y) return 1;
+				if(d1.y < d2.y) return -1;
+				if(d1.x > d2.x) return 1;
+				if(d1.x < d2.x) return -1;
+				throw new RuntimeException("Exhausted all comparison options while sorting\n"
+						+ "BACK: "+d1+"\n"+d2);
 			}
 
 			@Override
@@ -350,8 +369,10 @@ public final class TextRenderer implements Renderer {
 			
 			@Override
 			int compare(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
-				return 0;
+				//render higher draws first
+				//if height is equal, render bigger z values first
+				throw new RuntimeException("Exhausted all comparison options while sorting\n"
+						+ "LEFT: "+d1+"\n"+d2);
 			}
 
 			@Override
@@ -386,8 +407,10 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int compare(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
-				return 0;
+				//render taller requests first
+				//if the height is the same, render smaller Z's first
+				throw new RuntimeException("Exhausted all comparison options while sorting\n"
+						+ "RIGHT: "+d1+"\n"+d2);
 			}
 
 			@Override
@@ -422,8 +445,10 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int compare(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
-				return 0;
+				//render bigger Z's first
+				//if the Z is equal, render smaller x's first
+				throw new RuntimeException("Exhausted all comparison options while sorting\n"
+						+ "TOP: "+d1+"\n"+d2);
 			}
 
 			@Override
@@ -561,6 +586,12 @@ public final class TextRenderer implements Renderer {
 		 */
 		public int cull(Draw o) {
 			return TextRenderer.this.face.cull(this, o);
+		}
+		
+		@Override
+		public String toString() {
+			//TODO
+			return "NOT IMPLEMENTED YET";
 		}
 	}
 	/**
