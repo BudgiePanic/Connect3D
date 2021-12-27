@@ -23,7 +23,7 @@ public final class Game implements Runnable, Observer {
 	private Renderer renderer;
 	private List<Piece> players;
 	private Board board;
-	private static final int BOARD_SIZE = 4;
+	private final int BOARD_SIZE;
 	private int currentPlayer;
 	
 	/**
@@ -39,9 +39,10 @@ public final class Game implements Runnable, Observer {
 	 *  Thrown if the players list is empty, does not contain two or more pieces, or contains empty
 	 *  which is an invalid player type.
 	 */
-	public Game(Renderer r, List<Piece> players) throws IllegalArgumentException {
+	public Game(Renderer r, List<Piece> players, int board_size) throws IllegalArgumentException {
 		if(r == null || players == null) throw new IllegalArgumentException("Params cannot be null!");
 		if(players.isEmpty() || players.contains(Piece.EMPTY)) throw new IllegalArgumentException("Must provide valid players");
+		this.BOARD_SIZE = board_size;
 		this.players = Collections.unmodifiableList(players);
 		this.currentPlayer = 0;
 		this.renderer = r;
