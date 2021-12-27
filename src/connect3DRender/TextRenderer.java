@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -254,19 +255,33 @@ public final class TextRenderer implements Renderer {
 			face.addToDrawTable(w, this);
 		}
 		List<Draw> sortedReqs = drawTable.values().stream().
-				sorted().collect(Collectors.toList()); //TODO needs testing lol
-		// check there is something to draw
+				sorted().collect(Collectors.toList()); //TODO needs testing lol TODO
 		if(sortedReqs.isEmpty()) return; 
 		//execute the draw requests TODO
 			//initialize the b value based on the first request
 			//initialize the a value
 			//Go through the sorted requests.
 			//convert draw request location to screen space, based on FACE.
-			//if a 'b' value changes, add a new line to the string builder
+			//if a 'b' value changes, add a new line to the string builder and reset a
 			//if the 'a' value changes by more than one, add padding spaces.
+		StringBuilder output = new StringBuilder();
+		this.a = 0;
+		this.b = sortedReqs.get(0).toRenderSpace().b;
 		for(Draw d : sortedReqs) {
-			
+			Coord screenSpace = d.toRenderSpace();
+			if(this.b != screenSpace.b) {
+				this.a = 0;
+				this.b++;
+				output.append('\n');
+			}
+			while(a < screenSpace.a) {
+				a++; output.append(' ');
+			}
+			output.append(d.color.charRep());
+			a++;
 		}
+		
+		System.out.println(output.toString());
 	}
 
 	@Override
@@ -336,12 +351,11 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = new Coord(d.x, d.y); //translate the draw to render space.
+				Coord coord = d.toRenderSpace(); //translate the draw to render space.
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null &&
-						d.cull(prev) > 0) {
+				if(prev != null) {
 					//overwrite the map value
-					r.addToDrawTable(coord, d);
+					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -349,8 +363,8 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			Coord toScreenSpace(int x, int y, int z) {
-				return new Coord(x, y);
+			Coord toScreenSpace(int x, int y, int z, int dimension) {
+				return new Coord(x, dimension-y);
 			}
 		},
 		/**
@@ -382,11 +396,10 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = new Coord(d.x, d.y); 
+				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && //overwrite the map value if it is closer
-						d.cull(prev) > 0) {
-					r.addToDrawTable(coord, d);
+				if(prev != null) {
+					if(d.cull(prev) > 0)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
@@ -394,9 +407,10 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			Coord toScreenSpace(int x, int y, int z) {
-				// TODO Auto-generated method stub
-				return null;
+			Coord toScreenSpace(int x, int y, int z, int dimension) {
+				int a = dimension - x;
+				int b = dimension - y;
+				return new Coord(a, b);
 			}
 			
 		},
@@ -430,7 +444,7 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = new Coord(d.z, d.y); 
+				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null && //overwrite the map value if it is closer
 						d.cull(prev) > 0) {
@@ -442,9 +456,10 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			Coord toScreenSpace(int x, int y, int z) {
-				// TODO Auto-generated method stub
-				return null;
+			Coord toScreenSpace(int x, int y, int z, int dimension) {
+				int a = dimension - z;
+				int b = dimension - y;
+				return new Coord(a, b);
 			}
 			
 		},
@@ -478,7 +493,7 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = new Coord(d.z, d.y); 
+				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null && //overwrite the map value if it is closer
 						d.cull(prev) > 0) {
@@ -490,9 +505,10 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			Coord toScreenSpace(int x, int y, int z) {
-				// TODO Auto-generated method stub
-				return null;
+			Coord toScreenSpace(int x, int y, int z, int dimension) {
+				int a = z;
+				int b = dimension - y;
+				return new Coord(a,b);
 			}
 			
 		},
@@ -525,7 +541,7 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = new Coord(d.x, d.z); 
+				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
 				if(prev != null && //overwrite the map value if it is closer
 						d.cull(prev) > 0) {
@@ -537,9 +553,10 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			Coord toScreenSpace(int x, int y, int z) {
-				// TODO Auto-generated method stub
-				return null;
+			Coord toScreenSpace(int x, int y, int z, int dimension) {
+				int a = x;
+				int b = dimension - z;
+				return new Coord(a,b);
 			}
 			
 		};
@@ -548,6 +565,8 @@ public final class TextRenderer implements Renderer {
 		 * When drawing, the rasterizer(System.out lol) goes from top left to bottom right.
 		 * Sort the draw requests to ensure the draws happen in the correct order.
 		 * Uses the strategy pattern to choose how to sort based on the current FACE.
+		 * {Compares the draw requests locations in screen space?}
+		 * currently compares world space locations.
 		 * @param d1
 		 *  The first draw request being sorted
 		 * @param d2
@@ -590,10 +609,12 @@ public final class TextRenderer implements Renderer {
 		 *  the vertical
 		 * @param z
 		 *  the depth
+		 * @param dimension 
+		 *  The dimension of the board, used in world space to screen space calculations.
 		 * @return
 		 *  this location in a,b screen space
 		 */
-		abstract Coord toScreenSpace(int x, int y, int z);
+		abstract Coord toScreenSpace(int x, int y, int z, int dimension);
 	}
 	
 	/**
@@ -638,12 +659,18 @@ public final class TextRenderer implements Renderer {
 		final Type type;
 		
 		/**
-		 * 
+		 * Encapsulate a drawing request.
 		 * @param x
+		 *  The world space lateral displacement from the origin.
 		 * @param y
+		 *  The world space vertical displacement from the origin.
 		 * @param z
+		 *  The world space depth displacement from the origin.
 		 * @param t
+		 *  The type of geometry primitive being drawn.
 		 * @param color
+		 *  The color of the geometry.
+		 *  
 		 */
 		Draw(int x, int y, int z, Type t, Piece color){
 			assert t != null; assert color != null;
@@ -657,7 +684,9 @@ public final class TextRenderer implements Renderer {
 		 *  A location with the screen space coords of this draw request.
 		 */
 		public Coord toRenderSpace() {
-			return TextRenderer.this.face.toScreenSpace(x,y,z);
+			return TextRenderer.this.face.toScreenSpace(x,y,z,
+					TextRenderer.this.dimension-1 //dimension = 4 ->> 0 - 3 index range
+			);
 		}
 		
 		@Override
@@ -680,8 +709,7 @@ public final class TextRenderer implements Renderer {
 		
 		@Override
 		public String toString() {
-			//TODO
-			return "NOT IMPLEMENTED YET";
+			return this.type.name()+" x:"+x+" y:"+y+" z:"+z;
 		}
 	}
 	/**
@@ -692,11 +720,11 @@ public final class TextRenderer implements Renderer {
 		/**
 		 * The distance from the origin laterally (the x in (x,y))
 		 */
-		final int a;
+		public final int a;
 		/**
 		 * The from the origin vertically (the y in (x,y))
 		 */
-		final int b;
+		public final int b;
 		/**
 		 * A new Coord.
 		 * @param a
@@ -707,5 +735,26 @@ public final class TextRenderer implements Renderer {
 		Coord(int a,int b){
 			this.a = a; this.b = b;
 		}
+		
+		@Override
+		public String toString() {
+			return "Coord: a->"+a+" b->"+b;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(a, b);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (!(obj instanceof Coord))
+				return false;
+			Coord other = (Coord) obj;
+			return a == other.a && b == other.b;
+		}
+		
 	}
 }
