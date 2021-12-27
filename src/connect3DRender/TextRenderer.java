@@ -347,6 +347,11 @@ public final class TextRenderer implements Renderer {
 					r.addToDrawTable(coord, d);
 				}
 			}
+
+			@Override
+			Coord toScreenSpace(int x, int y, int z) {
+				return new Coord(x, y);
+			}
 		},
 		/**
 		 * viewing the game from behind.
@@ -386,6 +391,12 @@ public final class TextRenderer implements Renderer {
 					//Nothing in the map, add the draw
 					r.addToDrawTable(coord, d);
 				}	
+			}
+
+			@Override
+			Coord toScreenSpace(int x, int y, int z) {
+				// TODO Auto-generated method stub
+				return null;
 			}
 			
 		},
@@ -429,6 +440,12 @@ public final class TextRenderer implements Renderer {
 					r.addToDrawTable(coord, d);
 				}	
 			}
+
+			@Override
+			Coord toScreenSpace(int x, int y, int z) {
+				// TODO Auto-generated method stub
+				return null;
+			}
 			
 		},
 		/**
@@ -471,6 +488,12 @@ public final class TextRenderer implements Renderer {
 					r.addToDrawTable(coord, d);
 				}	
 			}
+
+			@Override
+			Coord toScreenSpace(int x, int y, int z) {
+				// TODO Auto-generated method stub
+				return null;
+			}
 			
 		},
 		/**
@@ -512,6 +535,12 @@ public final class TextRenderer implements Renderer {
 					r.addToDrawTable(coord, d);
 				}	
 			}
+
+			@Override
+			Coord toScreenSpace(int x, int y, int z) {
+				// TODO Auto-generated method stub
+				return null;
+			}
 			
 		};
 		
@@ -552,6 +581,19 @@ public final class TextRenderer implements Renderer {
 		 * of the renderer unless we give the reference manually.
 		 */
 		abstract void addToDrawTable(Draw d, TextRenderer r);
+		
+		/**
+		 * Convert an x,y,z location to a,b screen space
+		 * @param x
+		 *  the horizontal
+		 * @param y
+		 *  the vertical
+		 * @param z
+		 *  the depth
+		 * @return
+		 *  this location in a,b screen space
+		 */
+		abstract Coord toScreenSpace(int x, int y, int z);
 	}
 	
 	/**
@@ -607,6 +649,15 @@ public final class TextRenderer implements Renderer {
 			assert t != null; assert color != null;
 			this.x = x; this.y = y; this.z = z;
 			this.type = t; this.color = color;
+		}
+		
+		/**
+		 * Converts this draw requests coordinates to screen space.
+		 * @return
+		 *  A location with the screen space coords of this draw request.
+		 */
+		public Coord toRenderSpace() {
+			return TextRenderer.this.face.toScreenSpace(x,y,z);
 		}
 		
 		@Override
