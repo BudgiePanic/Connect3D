@@ -9,6 +9,15 @@ import java.util.stream.Collectors;
 
 import connect3DCore.Piece;
 
+//Another rendering strategy I just thought of is:
+//Do a linear scan through all the draw requests
+//based on the FACE, collect all the unique (A,B) pairs that could be rendered.
+//Build a map of (A,B) -> Draws
+//Try to put all Draws into the map, but only insert ones that survive their CULL check
+//with the draw that is already in the map. 
+//========================================================================================
+//Then to render, we just sort the map entries and execute the draws within.
+
 /**
  * The text renderer uses the command line to perform IO.
  * Simple, boring, good for testing?
@@ -209,8 +218,8 @@ public final class TextRenderer implements Renderer {
 		for(Component c : drawables) {
 			c.draw(this);
 		}
-		//process(sort) the draw requests
-		//execute the draw requests
+		//process(sort) the draw requests TODO
+		//execute the draw requests TODO
 	}
 
 	@Override
@@ -242,8 +251,7 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
-				if(d1.x == d2.x &&
-						d1.y == d1.y) {
+				if(d1.x == d2.x && d1.y == d1.y) {
 					if(d1.z < d2.z) return 1; //d1 is closer, keep it
 					return -1; //d2 must be closer, keep d2
 				}
@@ -253,7 +261,6 @@ public final class TextRenderer implements Renderer {
 		},
 		/**
 		 * viewing the game from behind.
-		 * If the X and Y values are the same, keep requests that are further away.
 		 */
 		BACK {
 			
@@ -265,7 +272,8 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
-				if(d1.x == d2.x && d1.y == d2.z) {
+				//If the X and Y values are the same, keep requests that are further away.
+				if(d1.x == d2.x && d1.y == d2.y) {
 					//if d1's z value is bigger, keep it
 					return d1.z - d2.z;
 				}
@@ -274,7 +282,7 @@ public final class TextRenderer implements Renderer {
 			
 		},
 		/**
-		 * viewing the game from the left
+		 * viewing the game from the left.
 		 */
 		LEFT {
 			
@@ -286,7 +294,12 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
+				//if the z and the y values are the same
+				//keep draws with a smaller x.
+				if(d1.z == d2.z && d1.y == d2.y) {
+					if(d1.x < d2.x) return 1;
+					return -1;
+				}
 				return 0;
 			}
 			
@@ -304,7 +317,12 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
+				// if the two draws height's are the same
+				// and their z values are the same
+				// keep draws that have a bigger x
+				if(d1.y == d2.y && d1.z == d2.z) {
+					return d1.x - d2.x;
+				}
 				return 0;
 			}
 			
@@ -322,7 +340,11 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
+				//if the draw's x and z values are the same
+				//then keep draws that have a bigger y value
+				if(d1.x == d2.x && d1.z == d2.z) {
+					return d1.y - d2.y;
+				}
 				return 0;
 			}
 			
@@ -331,9 +353,15 @@ public final class TextRenderer implements Renderer {
 		/**
 		 * When drawing, the rasterizer(System.out lol) goes from top left to bottom right.
 		 * Sort the draw requests to ensure the draws happen in the correct order.
+		 * Uses the strategy pattern to choose how to sort based on the current FACE.
 		 * @param d1
+		 *  The first draw request being sorted
 		 * @param d2
+		 *  The second draw request being sorted
 		 * @return
+		 *  +ve if d1 is drawn first
+		 *  -ve if d2 is drawn first
+		 *  should not return 0 (draws should not be on top of each other)
 		 */
 		abstract int compare(Draw d1, Draw d2);
 		
@@ -409,6 +437,19 @@ public final class TextRenderer implements Renderer {
 		@Override
 		public int compareTo(Draw o) {
 			return TextRenderer.this.face.compare(this, o);
+		}
+		
+		/**
+		 * Determine if this draw request is in front of another draw request.
+		 * @param o
+		 *  The other draw request.
+		 * @return
+		 * +ve 'this' request is in front of 'o' and should be kept
+		 * -ve 'this' is behind 'o' and should be dropped
+		 * 0 'this' and 'o' are not on the same axis and should both be kept.
+		 */
+		public int cull(Draw o) {
+			return TextRenderer.this.face.cull(this, o);
 		}
 		
 	}
