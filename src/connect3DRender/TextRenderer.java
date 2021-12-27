@@ -252,7 +252,8 @@ public final class TextRenderer implements Renderer {
 			}
 		},
 		/**
-		 * viewing the game from behind
+		 * viewing the game from behind.
+		 * If the X and Y values are the same, keep requests that are further away.
 		 */
 		BACK {
 			
@@ -264,7 +265,10 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
-				// TODO Auto-generated method stub
+				if(d1.x == d2.x && d1.y == d2.z) {
+					//if d1's z value is bigger, keep it
+					return d1.z - d2.z;
+				}
 				return 0;
 			}
 			
