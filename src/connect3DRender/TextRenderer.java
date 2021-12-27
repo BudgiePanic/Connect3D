@@ -2,7 +2,9 @@ package connect3DRender;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -52,6 +54,12 @@ public final class TextRenderer implements Renderer {
 	 * Store the draw requests that are made by the renderable components.
 	 */
 	private final List<Draw> drawRequests = new ArrayList<>();
+	
+	/**
+	 * Store a mapping of render space coords to draw requests.
+	 * Allows quick filtering of draw requests that are behind other draw requests.
+	 */
+	private final Map<Coord, Draw> drawTable = new HashMap<>();
 
 	/**
 	 * Remember if the initialize method has been called.
@@ -214,12 +222,20 @@ public final class TextRenderer implements Renderer {
 	public void redraw() throws IllegalStateException {
 		//staged drawing.
 		this.drawRequests.clear();
-		//Component's draw calls are stored as requests
+		this.drawTable.clear();
+		//Populate the draw requests list.
 		for(Component c : drawables) {
 			c.draw(this);
 		}
-		//process(sort) the draw requests TODO
+		//process the draw requests
+		for(Draw w : drawRequests) {
+			face.addToScreenTable(w, this);
+		}
+		//Sort the draw requests TODO
+			//get the values out of the map and sort them. 
 		//execute the draw requests TODO
+			//Go through the sorted requests.
+			//if a 'a' value changes, add a new line to the string builder {done via draw comparable method...}
 	}
 
 	@Override
@@ -227,6 +243,25 @@ public final class TextRenderer implements Renderer {
 
 	@Override
 	public boolean removeComponent(Component c) { return this.drawables.remove(c); }
+	
+	/**
+	 * Helper method for addToDrawTable;
+	 * @param c
+	 *  the location we are checking to see if there is a draw request at.
+	 * @return
+	 *  null if the draw table has no draw request for location c.
+	 */
+	private Draw getFromDrawTable(Coord c) {
+		return this.drawTable.get(c);
+	}
+	
+	/**
+	 * Helper method for addToDrawTable
+	 * @param d
+	 */
+	private void addToDrawTable(Coord c, Draw d) {
+		this.drawTable.put(c, d);
+	}
 	
 	/**
 	 * The faces of the board that can be drawn.
@@ -258,6 +293,20 @@ public final class TextRenderer implements Renderer {
 				//else: draw requests aren't related.
 				return 0;
 			}
+
+			@Override
+			void addToScreenTable(Draw d, TextRenderer r) {
+				Coord coord = new Coord(d.x, d.y); //translate the draw to render space.
+				Draw prev = r.getFromDrawTable(coord); 
+				if(prev != null &&
+						d.cull(prev) > 0) {
+					//overwrite the map value
+					r.addToDrawTable(coord, d);
+				} else {
+					//Nothing in the map, add the draw
+					r.addToDrawTable(coord, d);
+				}
+			}
 		},
 		/**
 		 * viewing the game from behind.
@@ -278,6 +327,19 @@ public final class TextRenderer implements Renderer {
 					return d1.z - d2.z;
 				}
 				return 0;
+			}
+
+			@Override
+			void addToScreenTable(Draw d, TextRenderer r) {
+				Coord coord = new Coord(d.x, d.y); 
+				Draw prev = r.getFromDrawTable(coord); 
+				if(prev != null && //overwrite the map value if it is closer
+						d.cull(prev) > 0) {
+					r.addToDrawTable(coord, d);
+				} else {
+					//Nothing in the map, add the draw
+					r.addToDrawTable(coord, d);
+				}	
 			}
 			
 		},
@@ -302,6 +364,19 @@ public final class TextRenderer implements Renderer {
 				}
 				return 0;
 			}
+
+			@Override
+			void addToScreenTable(Draw d, TextRenderer r) {
+				Coord coord = new Coord(d.z, d.y); 
+				Draw prev = r.getFromDrawTable(coord); 
+				if(prev != null && //overwrite the map value if it is closer
+						d.cull(prev) > 0) {
+					r.addToDrawTable(coord, d);
+				} else {
+					//Nothing in the map, add the draw
+					r.addToDrawTable(coord, d);
+				}	
+			}
 			
 		},
 		/**
@@ -325,6 +400,19 @@ public final class TextRenderer implements Renderer {
 				}
 				return 0;
 			}
+
+			@Override
+			void addToScreenTable(Draw d, TextRenderer r) {
+				Coord coord = new Coord(d.z, d.y); 
+				Draw prev = r.getFromDrawTable(coord); 
+				if(prev != null && //overwrite the map value if it is closer
+						d.cull(prev) > 0) {
+					r.addToDrawTable(coord, d);
+				} else {
+					//Nothing in the map, add the draw
+					r.addToDrawTable(coord, d);
+				}	
+			}
 			
 		},
 		/**
@@ -346,6 +434,19 @@ public final class TextRenderer implements Renderer {
 					return d1.y - d2.y;
 				}
 				return 0;
+			}
+
+			@Override
+			void addToScreenTable(Draw d, TextRenderer r) {
+				Coord coord = new Coord(d.x, d.z); 
+				Draw prev = r.getFromDrawTable(coord); 
+				if(prev != null && //overwrite the map value if it is closer
+						d.cull(prev) > 0) {
+					r.addToDrawTable(coord, d);
+				} else {
+					//Nothing in the map, add the draw
+					r.addToDrawTable(coord, d);
+				}	
 			}
 			
 		};
@@ -377,6 +478,16 @@ public final class TextRenderer implements Renderer {
 		 *  0 means it doesn't matter as their draws won't interfere with each other.
 		 */
 		abstract int cull(Draw d1, Draw d2);
+		
+		/**
+		 * Put's the draw request into the draw table if it is front of an existing draw request.
+		 * @param d
+		 *  The draw request being put into the draw table.
+		 * @param r 
+		 * Reference to the renderer. Because enums are static we can't look at the runtime instance
+		 * of the renderer unless we give it a reference.
+		 */
+		abstract void addToScreenTable(Draw d, TextRenderer r);
 	}
 	
 	/**
@@ -451,6 +562,27 @@ public final class TextRenderer implements Renderer {
 		public int cull(Draw o) {
 			return TextRenderer.this.face.cull(this, o);
 		}
-		
+	}
+	/**
+	 * Helper class to store (A,B) Render space coordinates.
+	 * @author Benjamin
+	 */
+	private static class Coord{
+		/**
+		 * The distance from the origin laterally (the x in (x,y))
+		 */
+		final int a;
+		/**
+		 * The from the origin vertically (the y in (x,y))
+		 */
+		final int b;
+		/**
+		 * A new Coord.
+		 * @param a
+		 * @param b
+		 */
+		Coord(int a,int b){
+			this.a = a; this.b = b;
+		}
 	}
 }
