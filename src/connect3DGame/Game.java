@@ -35,6 +35,8 @@ public final class Game implements Runnable, Observer {
 	 *  The game will cycle turns around these pieces until someone wins or the board fills
 	 *  capacity.
 	 *  Should contain 2 of more piece types and NOT contain EMPTY.
+	 * @param board_size
+	 *  The size of the board that this game will use.
 	 * @throws IllegalArgumentException 
 	 *  Thrown if the players list is empty, does not contain two or more pieces, or contains empty
 	 *  which is an invalid player type.
