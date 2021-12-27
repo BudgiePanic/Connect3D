@@ -280,10 +280,8 @@ final class ArrayBoard implements Board {
 			for(int y = 0; y < pieces.length; y++) {
 				for(int z = 0; z < pieces.length; z++) {
 					Piece p = getPieceAt(x, y, z);
-					if(p != EMPTY) {
-						g.setActiveColor(p);
-						g.drawSphereAt(x, y, z, unit);
-					}
+					g.setActiveColor(p);
+					g.drawSphereAt(x, y, z, unit);
 				}
 			}
 		}
