@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import connect3DRender.Graphics;
+
 import static java.util.Map.entry;
 import static connect3DCore.Piece.*;
 import static connect3DCore.Direction.*;
@@ -84,6 +86,7 @@ final class ArrayBoard implements Board {
 	@Override
 	public boolean placePieceAt(int x, int z, Piece p) throws IllegalArgumentException, IllegalStateException {
 		int y = getNextFree(x,z);
+		if(y < 0) return false;
 		return insertPieceAt(x, y, z, p);
 	}
 
@@ -103,7 +106,7 @@ final class ArrayBoard implements Board {
 		for(int y = 0; y < pieces.length; y++) {
 			if(isLocValid(x, y, z) && getPieceAt(x, y, z) == EMPTY) return y;
 		}
-		throw new RuntimeException(); //make the compiler happy. Exception WILL be thrown earlier.
+		return -1;
 	}
 
 	@Override
@@ -262,5 +265,30 @@ final class ArrayBoard implements Board {
 	@Override
 	public List<Tuple> getWinningPieceLocations() {
 		return new ArrayList<>(winningPieceLocations); //give a copy so outside forces can't change it.
+	}
+
+	@Override
+	public void draw(Graphics g) {
+		assert pieces.length >= 4;
+		float unit = 1.0f;
+		float width = pieces.length * unit;
+		//Draw the base below 0,0,0
+		g.setActiveColor(EMPTY);
+		g.drawCubeAt(-1, -2, -1, unit + width + unit, unit);
+		//draw the pieces as spheres
+		for(int x = 0; x < pieces.length; x++) {
+			for(int y = 0; y < pieces.length; y++) {
+				for(int z = 0; z < pieces.length; z++) {
+					Piece p = getPieceAt(x, y, z);
+					g.setActiveColor(p);
+					g.drawSphereAt(x, y, z, unit);
+				}
+			}
+		}
+	}
+
+	@Override
+	public boolean isXZvalid(int x, int z) {
+		return isLocValid(x, 0, z);
 	}
 }

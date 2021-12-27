@@ -1,3 +1,7 @@
+import java.util.List;
+
+import connect3DCore.Piece;
+import connect3DGame.Game;
 import connect3DRender.RenderFactory;
 
 /**
@@ -11,17 +15,26 @@ public final class Main {
 	 * @param args ignored, currently.
 	 */
 	public static void main(String[] args) {
-		System.out.println("Hello connect3D");
-		RenderFactory.Renderer("TEXT");
-		RenderFactory.Renderer("OPENGL");
-		RenderFactory.Renderer("DIRECTX");
-		//Game then asks for the player config info via the renderer.
-		//Uses this info the initialize a board
-		//Then enters the main game loop
+		System.out.println("Hello connect3D!");
+		System.out.println("Currently using text rendering! Hard coded.");
+		//Ask user for game configurement information
+		//Pass the config information to the Game constructor.
+		//Game uses this information to configure the board
+		//Game then starts
 		//Players take turns making an input which the game converts into a board input 
 		//This continues until someone makes 4 in a row or the board fills up.
-		//then a "You won" is displayed
+		//The game thread then exits upon completion.
+		//"This" will then show
+		//a "You won" message
 		//followed by "Play again?" OR "Exit"
 		//new Game(RenderFactory.Renderer(args[0])).start();
+		System.out.println("Currently hard coded for two player games only!");
+		System.out.println("Game configuration coming later.");
+		System.out.println("Starting the game...");
+		int board_size = 4;
+		new Game(RenderFactory.Renderer("text", board_size), List.of(Piece.RED, Piece.BLUE), board_size).run();
+		
+		System.out.println("Game complete. Good Bye.");
+		
 	}
 }

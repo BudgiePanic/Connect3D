@@ -2,13 +2,15 @@ package connect3DCore;
 
 import java.util.List;
 
+import connect3DRender.Component;
+
 /**
  * Public facing board interface.
  * The board contains the internal representation of the connect3D game.
  * @author Benjamin
  *
  */
-public interface Board {
+public interface Board extends Component {
 	
 	/**
 	 * Query the board to see if a piece has won.
@@ -53,6 +55,17 @@ public interface Board {
 	 *  Thrown if a piece is placed after the game has ended.
 	 */
 	public boolean placePieceAt( int x, int z, Piece p) throws IllegalArgumentException, IllegalStateException;
+	
+	/**
+	 * Check if an (x,z) column is valid for this board.
+	 * @param x
+	 *  The lateral location component.
+	 * @param z
+	 *  The depth location component.
+	 * @return
+	 *  True if this location is within the board.
+	 */
+	public boolean isXZvalid(int x, int z);
 	
 	/**
 	 * Get a piece at a location.
