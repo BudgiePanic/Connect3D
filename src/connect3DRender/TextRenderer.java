@@ -393,7 +393,8 @@ public final class TextRenderer implements Renderer {
 				//If the X and Y values are the same, keep requests that are further away.
 				if(d1.x == d2.x && d1.y == d2.y) {
 					//if d1's z value is bigger, keep it
-					return d1.z - d2.z;
+					if(d1.z > d2.z) return 1;
+					return -1;
 				}
 				return 0;
 			}
@@ -489,7 +490,8 @@ public final class TextRenderer implements Renderer {
 				// and their z values are the same
 				// keep draws that have a bigger x
 				if(d1.y == d2.y && d1.z == d2.z) {
-					return d1.x - d2.x;
+					if(d1.x > d2.x) return 1;
+					return -1;
 				}
 				return 0;
 			}
@@ -533,10 +535,13 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
+				assert d1.color != Piece.EMPTY;
+				assert d2.color != Piece.EMPTY;
 				//if the draw's x and z values are the same
 				//then keep draws that have a bigger y value
 				if(d1.x == d2.x && d1.z == d2.z) {
-					return d1.y - d2.y;
+					if(d1.y > d2.y) return 1;
+					return -1;
 				}
 				return 0;
 			}
