@@ -404,7 +404,7 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
+				if(prev != null && d.color != Piece.EMPTY) {
 					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
@@ -452,7 +452,7 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
+				if(prev != null && d.color != Piece.EMPTY) {
 					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
@@ -501,7 +501,7 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
+				if(prev != null && d.color != Piece.EMPTY) {
 					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
@@ -551,7 +551,7 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); 
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
+				if(prev != null && d.color != Piece.EMPTY) {
 					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
 				} else {
 					//Nothing in the map, add the draw
