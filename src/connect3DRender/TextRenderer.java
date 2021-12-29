@@ -78,7 +78,8 @@ public final class TextRenderer implements Renderer {
 	 */
 	private static final List<String> faces = Collections.unmodifiableList(
 		List.of(Face.values()).stream()
-		.map(Face::name).collect(Collectors.toList())
+		.map(Face::name).map((s) -> s.toLowerCase()).
+		collect(Collectors.toList())
 	);
 	
 	//not happy with this system at the moment.
@@ -208,8 +209,8 @@ public final class TextRenderer implements Renderer {
 				notifyObservers();
 			} else {
 				//Update the face if the user typed one.
-				if (faces.contains(userTyped)) {
-					face = Face.valueOf(userTyped);
+				if (faces.contains(userTyped.toLowerCase())) {
+					face = Face.valueOf(userTyped.toUpperCase());
 					drawMessage("Face: "+this.face.name());
 				}
 			} 
@@ -243,14 +244,16 @@ public final class TextRenderer implements Renderer {
 
 	@Override
 	public void redraw() throws IllegalStateException {
+		//separate this draw from the last draw.
+		System.out.println();
 		//staged drawing.
 		this.drawRequests.clear();
 		this.drawTable.clear();
-		//Populate the draw requests list.
+		//collect draw requests from components.
 		for(Component c : drawables) {
 			c.draw(this);
 		}
-		//process the draw requests
+		//process the draw requests.
 		for(Draw w : drawRequests) {
 			addToDrawTable(w);
 		}
@@ -259,7 +262,7 @@ public final class TextRenderer implements Renderer {
 		Collections.sort(sortedReqs);
 		Collections.reverse(sortedReqs);
 		if(sortedReqs.isEmpty()) return; 
-		
+		//generate the output from the processed requests.
 		StringBuilder output = new StringBuilder();
 		this.a = 0;
 		this.b = sortedReqs.get(0).toRenderSpace().b;
@@ -289,8 +292,8 @@ public final class TextRenderer implements Renderer {
 	private void addToDrawTable(Draw d) {
 		Coord here = d.toRenderSpace();
 		Draw prev = this.drawTable.get(here);
-		if(prev == null || 							//add if nothing currently here
-		    prev.color == Piece.EMPTY ||			//replace if prev is transparent
+		if(prev == null || 									//add if nothing currently here
+		    prev.color == Piece.EMPTY ||					//replace if prev is transparent
 		     (d.color != Piece.EMPTY && d.cull(prev) > 0))	//replace if d is closer to camera than prev and d is not transparent
 		{
 			drawTable.put(here, d);
