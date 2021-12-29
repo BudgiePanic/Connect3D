@@ -252,7 +252,7 @@ public final class TextRenderer implements Renderer {
 		}
 		//process the draw requests
 		for(Draw w : drawRequests) {
-			face.addToDrawTable(w, this);
+			addToDrawTable(w);
 		}
 		List<Draw> sortedReqs = drawTable.values().stream().
 				collect(Collectors.toList()); //TODO needs testing lol TODO
@@ -284,6 +284,28 @@ public final class TextRenderer implements Renderer {
 		}
 		
 		System.out.println(output.toString());
+	}
+	
+	/**
+	 * Helper method to populate the draw table map.
+	 * Only adds eligible draw requests to the draw table.
+	 * @param d
+	 *  The draw request that is being tested for eligibility to be drawn.
+	 */
+	private void addToDrawTable(Draw d) {
+		//figure out this draw's location in render space
+		//get the draw that is already being drawn to this location
+		//if there is no draw, then add this one
+		//if there is a draw then add this one if the other one is transparent
+		//or if this one passes the cull check
+		Coord here = d.toRenderSpace();
+		Draw prev = this.drawTable.get(here);
+		if(prev == null) {
+			drawTable.put(here, d);
+		} else if (	prev.color == Piece.EMPTY ||
+					d.cull(prev) > 1 ) {
+			drawTable.put(here, d);
+		}
 	}
 
 	@Override
@@ -352,22 +374,6 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); //translate the draw to render space.
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && d.color != Piece.EMPTY) {
-					//overwrite the map value if d is closer to camera
-					//or the previous entry is transparent.
-					//If d is transparent, don't attempt to overwrite
-					if(d.cull(prev) > 0 ||
-							prev.color == Piece.EMPTY) r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}
-			}
-
-			@Override
 			Coord toScreenSpace(int x, int y, int z, int dimension) {
 				return new Coord(x, dimension-y);
 			}
@@ -398,18 +404,6 @@ public final class TextRenderer implements Renderer {
 					return -1;
 				}
 				return 0;
-			}
-
-			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && d.color != Piece.EMPTY) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
 			}
 
 			@Override
@@ -449,18 +443,6 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && d.color != Piece.EMPTY) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
-			}
-
-			@Override
 			Coord toScreenSpace(int x, int y, int z, int dimension) {
 				int a = dimension - z;
 				int b = dimension - y;
@@ -495,18 +477,6 @@ public final class TextRenderer implements Renderer {
 					return -1;
 				}
 				return 0;
-			}
-
-			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && d.color != Piece.EMPTY) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
 			}
 
 			@Override
@@ -548,18 +518,6 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null && d.color != Piece.EMPTY) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
-			}
-
-			@Override
 			Coord toScreenSpace(int x, int y, int z, int dimension) {
 				int a = x;
 				int b = dimension - z;
@@ -597,16 +555,6 @@ public final class TextRenderer implements Renderer {
 		 *  0 means it doesn't matter as their draws won't interfere with each other.
 		 */
 		abstract int cull(Draw d1, Draw d2);
-		
-		/**
-		 * Put's the draw request into the draw table if it is front of an existing draw request.
-		 * @param d
-		 *  The draw request being put into the draw table.
-		 * @param r 
-		 * Reference to the renderer. Because enums are static we can't look at the runtime instance
-		 * of the renderer unless we give the reference manually.
-		 */
-		abstract void addToDrawTable(Draw d, TextRenderer r);
 		
 		/**
 		 * Convert an x,y,z location to a,b screen space
