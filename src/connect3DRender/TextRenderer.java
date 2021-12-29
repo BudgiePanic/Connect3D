@@ -289,9 +289,9 @@ public final class TextRenderer implements Renderer {
 	private void addToDrawTable(Draw d) {
 		Coord here = d.toRenderSpace();
 		Draw prev = this.drawTable.get(here);
-		if(prev == null || 					//draw if nothing currently here
-		    prev.color == Piece.EMPTY ||	//draw if current is transparent
-		     d.cull(prev) > 1) 				//draw if new is closer to camera than current
+		if(prev == null || 							//add if nothing currently here
+		    prev.color == Piece.EMPTY ||			//replace if prev is transparent
+		     (d.color != Piece.EMPTY && d.cull(prev) > 0))	//replace if d is closer to camera than prev and d is not transparent
 		{
 			drawTable.put(here, d);
 		}
