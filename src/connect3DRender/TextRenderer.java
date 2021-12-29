@@ -355,9 +355,10 @@ public final class TextRenderer implements Renderer {
 			void addToDrawTable(Draw d, TextRenderer r) {
 				Coord coord = d.toRenderSpace(); //translate the draw to render space.
 				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
+				if(prev != null && d.color != Piece.EMPTY) {
 					//overwrite the map value if d is closer to camera
 					//or the previous entry is transparent.
+					//If d is transparent, don't attempt to overwrite
 					if(d.cull(prev) > 0 ||
 							prev.color == Piece.EMPTY) r.addToDrawTable(coord, d);
 				} else {
