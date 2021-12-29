@@ -252,20 +252,14 @@ public final class TextRenderer implements Renderer {
 		}
 		//process the draw requests
 		for(Draw w : drawRequests) {
-			face.addToDrawTable(w, this);
+			addToDrawTable(w);
 		}
 		List<Draw> sortedReqs = drawTable.values().stream().
-				collect(Collectors.toList()); //TODO needs testing lol TODO
+				collect(Collectors.toList()); 
 		Collections.sort(sortedReqs);
 		Collections.reverse(sortedReqs);
 		if(sortedReqs.isEmpty()) return; 
-		//execute the draw requests TODO
-			//initialize the b value based on the first request
-			//initialize the a value
-			//Go through the sorted requests.
-			//convert draw request location to screen space, based on FACE.
-			//if a 'b' value changes, add a new line to the string builder and reset a
-			//if the 'a' value changes by more than one, add padding spaces.
+		
 		StringBuilder output = new StringBuilder();
 		this.a = 0;
 		this.b = sortedReqs.get(0).toRenderSpace().b;
@@ -285,34 +279,29 @@ public final class TextRenderer implements Renderer {
 		
 		System.out.println(output.toString());
 	}
+	
+	/**
+	 * Helper method to populate the draw table map.
+	 * Only adds eligible draw requests to the draw table.
+	 * @param d
+	 *  The draw request that is being tested for eligibility to be drawn.
+	 */
+	private void addToDrawTable(Draw d) {
+		Coord here = d.toRenderSpace();
+		Draw prev = this.drawTable.get(here);
+		if(prev == null || 							//add if nothing currently here
+		    prev.color == Piece.EMPTY ||			//replace if prev is transparent
+		     (d.color != Piece.EMPTY && d.cull(prev) > 0))	//replace if d is closer to camera than prev and d is not transparent
+		{
+			drawTable.put(here, d);
+		}
+	}
 
 	@Override
 	public void addComponent(Component c) { this.drawables.add(c); }
 
 	@Override
 	public boolean removeComponent(Component c) { return this.drawables.remove(c); }
-	
-	/**
-	 * Helper method for addToDrawTable in FACE;
-	 * @param c
-	 *  the location we are checking to see if there is a draw request at.
-	 * @return
-	 *  null if the draw table has no draw request for location c.
-	 */
-	private Draw getFromDrawTable(Coord c) {
-		return this.drawTable.get(c);
-	}
-	
-	/**
-	 * Helper method for addToDrawTable in FACE
-	 * @param c
-	 *  The location that is being overwritten / added to 
-	 * @param d
-	 *  The draw request for that location
-	 */
-	private void addToDrawTable(Coord c, Draw d) {
-		this.drawTable.put(c, d);
-	}
 	
 	/**
 	 * The faces of the board that can be drawn from.
@@ -352,21 +341,6 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); //translate the draw to render space.
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
-					//overwrite the map value if d is closer to camera
-					//or the previous entry is transparent.
-					if(d.cull(prev) > 0 ||
-							prev.color == Piece.EMPTY) r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}
-			}
-
-			@Override
 			Coord toScreenSpace(int x, int y, int z, int dimension) {
 				return new Coord(x, dimension-y);
 			}
@@ -393,21 +367,10 @@ public final class TextRenderer implements Renderer {
 				//If the X and Y values are the same, keep requests that are further away.
 				if(d1.x == d2.x && d1.y == d2.y) {
 					//if d1's z value is bigger, keep it
-					return d1.z - d2.z;
+					if(d1.z > d2.z) return 1;
+					return -1;
 				}
 				return 0;
-			}
-
-			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
 			}
 
 			@Override
@@ -447,18 +410,6 @@ public final class TextRenderer implements Renderer {
 			}
 
 			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
-			}
-
-			@Override
 			Coord toScreenSpace(int x, int y, int z, int dimension) {
 				int a = dimension - z;
 				int b = dimension - y;
@@ -489,21 +440,10 @@ public final class TextRenderer implements Renderer {
 				// and their z values are the same
 				// keep draws that have a bigger x
 				if(d1.y == d2.y && d1.z == d2.z) {
-					return d1.x - d2.x;
+					if(d1.x > d2.x) return 1;
+					return -1;
 				}
 				return 0;
-			}
-
-			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
 			}
 
 			@Override
@@ -533,24 +473,15 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
+				assert d1.color != Piece.EMPTY;
+				assert d2.color != Piece.EMPTY;
 				//if the draw's x and z values are the same
 				//then keep draws that have a bigger y value
 				if(d1.x == d2.x && d1.z == d2.z) {
-					return d1.y - d2.y;
+					if(d1.y > d2.y) return 1;
+					return -1;
 				}
 				return 0;
-			}
-
-			@Override
-			void addToDrawTable(Draw d, TextRenderer r) {
-				Coord coord = d.toRenderSpace(); 
-				Draw prev = r.getFromDrawTable(coord); 
-				if(prev != null) {
-					if(d.cull(prev) > 0 || prev.color == Piece.EMPTY)r.addToDrawTable(coord, d);
-				} else {
-					//Nothing in the map, add the draw
-					r.addToDrawTable(coord, d);
-				}	
 			}
 
 			@Override
@@ -591,16 +522,6 @@ public final class TextRenderer implements Renderer {
 		 *  0 means it doesn't matter as their draws won't interfere with each other.
 		 */
 		abstract int cull(Draw d1, Draw d2);
-		
-		/**
-		 * Put's the draw request into the draw table if it is front of an existing draw request.
-		 * @param d
-		 *  The draw request being put into the draw table.
-		 * @param r 
-		 * Reference to the renderer. Because enums are static we can't look at the runtime instance
-		 * of the renderer unless we give the reference manually.
-		 */
-		abstract void addToDrawTable(Draw d, TextRenderer r);
 		
 		/**
 		 * Convert an x,y,z location to a,b screen space
