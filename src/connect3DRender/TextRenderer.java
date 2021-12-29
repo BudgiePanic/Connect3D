@@ -315,28 +315,6 @@ public final class TextRenderer implements Renderer {
 	public boolean removeComponent(Component c) { return this.drawables.remove(c); }
 	
 	/**
-	 * Helper method for addToDrawTable in FACE;
-	 * @param c
-	 *  the location we are checking to see if there is a draw request at.
-	 * @return
-	 *  null if the draw table has no draw request for location c.
-	 */
-	private Draw getFromDrawTable(Coord c) {
-		return this.drawTable.get(c);
-	}
-	
-	/**
-	 * Helper method for addToDrawTable in FACE
-	 * @param c
-	 *  The location that is being overwritten / added to 
-	 * @param d
-	 *  The draw request for that location
-	 */
-	private void addToDrawTable(Coord c, Draw d) {
-		this.drawTable.put(c, d);
-	}
-	
-	/**
 	 * The faces of the board that can be drawn from.
 	 * Draw the board differently based on the face.
 	 * @author Benjamin
