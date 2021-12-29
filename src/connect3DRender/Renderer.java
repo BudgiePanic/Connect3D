@@ -16,7 +16,7 @@ public interface Renderer extends Graphics, Subject {
 	public void initialize() throws InitializationException;
 	
 	/**
-	 * Release any resources the renderer is using disposal.
+	 * Release any resources the renderer is using prior to disposal.
 	 */
 	public void destroy();
 	
