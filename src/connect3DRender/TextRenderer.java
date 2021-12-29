@@ -255,17 +255,11 @@ public final class TextRenderer implements Renderer {
 			addToDrawTable(w);
 		}
 		List<Draw> sortedReqs = drawTable.values().stream().
-				collect(Collectors.toList()); //TODO needs testing lol TODO
+				collect(Collectors.toList()); 
 		Collections.sort(sortedReqs);
 		Collections.reverse(sortedReqs);
 		if(sortedReqs.isEmpty()) return; 
-		//execute the draw requests TODO
-			//initialize the b value based on the first request
-			//initialize the a value
-			//Go through the sorted requests.
-			//convert draw request location to screen space, based on FACE.
-			//if a 'b' value changes, add a new line to the string builder and reset a
-			//if the 'a' value changes by more than one, add padding spaces.
+		
 		StringBuilder output = new StringBuilder();
 		this.a = 0;
 		this.b = sortedReqs.get(0).toRenderSpace().b;
@@ -293,17 +287,12 @@ public final class TextRenderer implements Renderer {
 	 *  The draw request that is being tested for eligibility to be drawn.
 	 */
 	private void addToDrawTable(Draw d) {
-		//figure out this draw's location in render space
-		//get the draw that is already being drawn to this location
-		//if there is no draw, then add this one
-		//if there is a draw then add this one if the other one is transparent
-		//or if this one passes the cull check
 		Coord here = d.toRenderSpace();
 		Draw prev = this.drawTable.get(here);
-		if(prev == null) {
-			drawTable.put(here, d);
-		} else if (	prev.color == Piece.EMPTY ||
-					d.cull(prev) > 1 ) {
+		if(prev == null || 					//draw if nothing currently here
+		    prev.color == Piece.EMPTY ||	//draw if current is transparent
+		     d.cull(prev) > 1) 				//draw if new is closer to camera than current
+		{
 			drawTable.put(here, d);
 		}
 	}
