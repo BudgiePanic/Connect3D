@@ -32,14 +32,14 @@ public interface Renderer extends Graphics, Subject {
 	
 	/**
 	 * Redraw all the components that have been registered to this renderer.
-	 * The specifics of how the redrawing is left to the implementation.
+	 * The specifics of how the redrawing is performed is left to the implementation.
 	 * @throws IllegalStateException
 	 *  Thrown if the renderer has not been initialized.
 	 */
 	public void redraw() throws IllegalStateException;
 	
 	/**
-	 * Add a new component for the renderer to redraw on the redraw method.
+	 * Add a new component for the renderer to draw each frame.
 	 * @param c
 	 *  The new drawable component.
 	 */
