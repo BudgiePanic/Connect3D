@@ -5,6 +5,8 @@
 
 package connect3DRender;
 
+import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,15 +24,30 @@ import connect3DCore.Piece;
 public final class SwingRenderer implements Renderer {
 	
 	/**
-	 * 
+	 * Store list of objects that are interested in receiving updates from the renderer.
 	 */
 	private final List<Observer> observers = new ArrayList<>(1);
+	
+	/**
+	 * List of components this renderer will attempt to draw.
+	 */
+	private final List<Component> drawables = new ArrayList<>();
 	
 	/**
 	 * Root GUI element.
 	 */
 	private JFrame window;
 	
+	/**
+	 * The width of the window in pixels.
+	 */
+	private final int WIDTH = 640;
+	/**
+	 * The height of the window in pixels.
+	 */
+	private final int HEIGHT = 480;
+	
+	//message passing variables. These variables are passed to observers on notifyObservers()
 	private volatile int x,y,z;
 	private volatile String message;
 	
@@ -59,8 +76,9 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public void drawMessage(String msg) {
-		// TODO Auto-generated method stub
-
+		// TODO TEMP
+		assert msg != null;
+		System.out.println(msg);
 	}
 
 	@Override
@@ -81,45 +99,55 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public void notifyObservers() {
+		assert message != null;
 		for(Observer o : observers) {
-			o.update(0, 0, 0, null);
+			o.update(x,y,z,message);
 		}
 	}
 
 	@Override
 	public void initialize() throws InitializationException {
-		SwingUtilities.invokeLater(() -> {
-			window = new JFrame("Connect3D");
-			window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			window.setSize(640,480);
-			window.getContentPane().add(
-				new JButton("play 0 0") { //add a new custom button to the window that plays at (0,0) when clicked
-					private static final long serialVersionUID = 1L;
-						{
-							addActionListener((e)->{
-								x = 0;
-								z = 0;
-								message = "place";
-								notifyObservers();
-							});
-						}
-				}
-			);
-			window.getContentPane().add(
-					new JButton("play 0 1") { //add a new custom button to the window that plays at (0,0) when clicked
-						private static final long serialVersionUID = 2L;
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				window = new JFrame("Connect3D");
+				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				window.setSize(WIDTH,HEIGHT);
+				window.setLayout(new FlowLayout());
+				window.getContentPane().add(
+					new JButton("play 0 0") { //add a new custom button to the window that plays at (0,0) when clicked
+						private static final long serialVersionUID = 1L;
 							{
 								addActionListener((e)->{
 									x = 0;
-									z = 1;
+									z = 0;
 									message = "place";
 									notifyObservers();
 								});
 							}
 					}
-			);
-			window.setVisible(true);
-		}); //end of SU.invL8R
+				);
+				window.getContentPane().add(
+						new JButton("play 0 1") { //add a new custom button to the window that plays at (0,0) when clicked
+							private static final long serialVersionUID = 2L;
+								{
+									addActionListener((e)->{
+										x = 0;
+										z = 1;
+										message = "place";
+										notifyObservers();
+									});
+								}
+						}
+				);
+				window.setVisible(true);
+			});
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+			throw new InitializationException();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			throw new InitializationException();
+		} //end of SU.invL8R
 	}
 
 	@Override
@@ -132,27 +160,25 @@ public final class SwingRenderer implements Renderer {
 	}
 
 	@Override
-	public void pollEvents() throws IllegalStateException {
-		// TODO Auto-generated method stub
-
-	}
+	public void pollEvents() throws IllegalStateException {}
 
 	@Override
 	public void redraw() throws IllegalStateException {
-		// TODO Auto-generated method stub
-
+		//Stage 0 drawing, don't do anything.
+		//Just visit the component objects
+		for(Component c : drawables) {
+			c.draw(this);
+		}
 	}
 
 	@Override
 	public void addComponent(Component c) {
-		// TODO Auto-generated method stub
-
+		this.drawables.add(c);
 	}
 
 	@Override
 	public boolean removeComponent(Component c) {
-		// TODO Auto-generated method stub
-		return false;
+		return this.drawables.remove(c);
 	}
 
 }
