@@ -4,7 +4,16 @@ import connect3DCore.Piece;
 import connect3DGame.Game;
 import connect3DRender.RenderFactory;
 
+/**
+ * Class to test the software renderer.
+ * @author Benjamin
+ *
+ */
 public final class MainTest {
+	/**
+	 * Try to run the game using a swing renderer.
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		System.out.println("Hello connect3D!");
 		System.out.println("Testing Swing rendering.");
