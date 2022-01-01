@@ -6,13 +6,14 @@
 package connect3DRender;
 
 import java.awt.*;
+import java.awt.Graphics;
+import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+import javax.swing.event.*;
 
 import connect3DCore.Piece;
 
@@ -41,15 +42,18 @@ public final class SwingRenderer implements Renderer {
 	/**
 	 * The width of the window in pixels.
 	 */
-	private final int WIDTH = 640;
+	private static final int WIDTH = 640;
 	/**
 	 * The height of the window in pixels.
 	 */
-	private final int HEIGHT = 480;
+	private static final int HEIGHT = 480;
 	
 	//message passing variables. These variables are passed to observers on notifyObservers()
 	private volatile int x,y,z;
 	private volatile String message;
+	
+	//drawing fields
+	
 	
 	/**
 	 * Package private constructor so only the Render Factory can instantiate it.
@@ -111,34 +115,25 @@ public final class SwingRenderer implements Renderer {
 			SwingUtilities.invokeAndWait(() -> {
 				window = new JFrame("Connect3D");
 				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-				window.setSize(WIDTH,HEIGHT);
-				window.setLayout(new FlowLayout());
-				window.getContentPane().add(
-					new JButton("play 0 0") { //add a new custom button to the window that plays at (0,0) when clicked
-						private static final long serialVersionUID = 1L;
-							{
-								addActionListener((e)->{
-									x = 0;
-									z = 0;
-									message = "place";
-									notifyObservers();
-								});
-							}
+				window.setResizable(false);
+				window.setPreferredSize(new Dimension(WIDTH,HEIGHT));
+//				window.add(new DrawPanel());
+				window.add(new JPanel() {
+					{
+						setSize(WIDTH,HEIGHT);
+						setPreferredSize(new Dimension(WIDTH,HEIGHT));
+						setOpaque(true);
+						setBackground(Color.WHITE);
 					}
-				);
-				window.getContentPane().add(
-						new JButton("play 0 1") { //add a new custom button to the window that plays at (0,0) when clicked
-							private static final long serialVersionUID = 2L;
-								{
-									addActionListener((e)->{
-										x = 0;
-										z = 1;
-										message = "place";
-										notifyObservers();
-									});
-								}
-						}
-				);
+					@Override
+					public void paintComponent(Graphics g) {
+						super.paintComponent(g);
+						g.setColor(Color.BLUE);
+						g.fillOval(10,10,30,30);
+					}
+				});
+				window.validate();
+				window.pack();
 				window.setVisible(true);
 			});
 		} catch (InvocationTargetException e) {
@@ -169,6 +164,16 @@ public final class SwingRenderer implements Renderer {
 		for(Component c : drawables) {
 			c.draw(this);
 		}
+		
+		/*try {
+			SwingUtilities.invokeAndWait(() -> {
+				//window.revalidate();
+				//window.repaint();
+			}
+			);
+		} catch (InvocationTargetException | InterruptedException b) {
+			throw new RuntimeException(b);
+		}*/
 	}
 
 	@Override
@@ -181,4 +186,19 @@ public final class SwingRenderer implements Renderer {
 		return this.drawables.remove(c);
 	}
 
+	/*private class DrawPanel extends JPanel {
+		DrawPanel(){
+			setSize(WIDTH,HEIGHT);
+			setPreferredSize(new Dimension(WIDTH,HEIGHT));
+			setOpaque(true);
+			setBackground(Color.WHITE);
+		}
+		
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			g.setColor(Color.BLUE);
+			g.fillOval(10,10,30,30);
+		}
+	}*/
 }
