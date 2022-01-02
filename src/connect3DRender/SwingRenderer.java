@@ -88,7 +88,6 @@ public final class SwingRenderer implements Renderer {
 	@Override
 	public void drawMessage(String msg) {
 		assert msg != null;
-		System.out.println(msg);
 		this.drawRequests.add(new Draw() {
 			@Override
 			public int compareTo(Draw o) { return 1; }
