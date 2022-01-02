@@ -91,7 +91,7 @@ public final class SwingRenderer implements Renderer {
 	public void drawMessage(String msg) {
 		// TODO TEMP
 		assert msg != null;
-		System.out.println(msg);
+		//System.out.println(msg);
 	}
 
 	@Override
@@ -127,20 +127,6 @@ public final class SwingRenderer implements Renderer {
 				window.setResizable(false);
 				window.setPreferredSize(new Dimension(WIDTH,HEIGHT));
 				window.add(new DrawPanel());
-				/*window.add(new JPanel() {
-					{
-						setSize(WIDTH,HEIGHT);
-						setPreferredSize(new Dimension(WIDTH,HEIGHT));
-						setOpaque(true);
-						setBackground(Color.WHITE);
-					}
-					@Override
-					public void paintComponent(Graphics g) {
-						super.paintComponent(g);
-						g.setColor(Color.BLUE);
-						g.fillOval(10,10,30,30);
-					}
-				});*/
 				window.validate();
 				window.pack();
 				window.setVisible(true);
@@ -233,8 +219,34 @@ public final class SwingRenderer implements Renderer {
 			setPreferredSize(new Dimension(WIDTH,HEIGHT));
 			setOpaque(true);
 			setBackground(Color.WHITE);
-			//add mouse motion listener TODO
+			addMouseListener(new MouseListener()
+				{
+					@Override
+					public void mouseClicked(MouseEvent e) {
+						//System.out.println(e.getX()+" "+e.getY());
+					}
+					@Override
+					public void mousePressed(MouseEvent e) {}
+					@Override
+					public void mouseReleased(MouseEvent e) {}
+					@Override
+					public void mouseEntered(MouseEvent e) {}
+					@Override
+					public void mouseExited(MouseEvent e) {}
+				}
+			);
+			addMouseMotionListener(new MouseMotionListener() 
+				{
+					@Override
+					public void mouseDragged(MouseEvent e) {}
+
+					@Override
+					public void mouseMoved(MouseEvent e) {}
+				}
+			);
 		}
+		
+		//PAINT CODE BELOW THIS POINT
 
 		@Override
 		public void paintComponent(Graphics g) {
