@@ -10,6 +10,7 @@ import java.awt.Graphics;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.*;
@@ -59,10 +60,14 @@ public final class SwingRenderer implements Renderer {
 	private volatile String message;
 	
 	//drawing fields
+	private final List<Draw> drawRequests = new ArrayList<Draw>();
 	
 	
 	/**
 	 * Package private constructor so only the Render Factory can instantiate it.
+	 * @param dimension
+	 *  The d * d * d size of the board.
+	 *  Used for converting mouse inputs into board space locations. 
 	 */
 	SwingRenderer(int dimension){
 		assert dimension >= 4;
@@ -70,28 +75,26 @@ public final class SwingRenderer implements Renderer {
 	}
 
 	@Override
-	public void drawCylinderAt(int x, int y, int z, float radius, float height) {
-		// TODO Auto-generated method stub
-
-	}
+	public void drawCylinderAt(int x, int y, int z, float radius, float height) {}
 
 	@Override
-	public void drawCubeAt(int x, int y, int z, float width, float height) {
-		// TODO Auto-generated method stub
-
-	}
+	public void drawCubeAt(int x, int y, int z, float width, float height) {}
 
 	@Override
 	public void drawSphereAt(int x, int y, int z, float radius) {
-		// TODO Auto-generated method stub
-
+		//this.drawRequests.add(new Draw(x,y,z,SPHERE));
 	}
 
 	@Override
 	public void drawMessage(String msg) {
-		// TODO TEMP
 		assert msg != null;
-		//System.out.println(msg);
+		System.out.println(msg);
+		this.drawRequests.add(new Draw() {
+			@Override
+			public int compareTo(Draw o) { return 1; }
+			@Override
+			public void draw(Graphics g) { g.drawString(msg, 5,25); }
+		});
 	}
 
 	@Override
@@ -154,16 +157,17 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public void redraw() throws IllegalStateException {
-		//Stage 0 drawing, don't do anything.
-		//Just visit the component objects
+		this.drawRequests.clear();
 		for(Component c : drawables) {
-			c.draw(this);
+			c.draw(this); //collect draw requests from the scene
 		}
 		
 		try {
 			SwingUtilities.invokeAndWait(() -> {
+				//sort the draw Requests, furtherest away first.
+				Collections.sort(this.drawRequests);
 				//window.revalidate();
-				//window.repaint();
+				window.repaint(); //window itself will traverse the list and draw the objects
 			}
 			);
 		} catch (InvocationTargetException | InterruptedException b) {
@@ -307,6 +311,11 @@ public final class SwingRenderer implements Renderer {
 			super.paintComponent(g);
 			paintInputLayerH(g, dimension+1);
 			paintInputLayerV(g, dimension+1);
+			//g.drawString("message",5,25);
+			//the draw requests should already be sorted
+			for(Draw d : SwingRenderer.this.drawRequests) {
+				d.draw(g);
+			}
 		}
 		
 		/**
@@ -347,5 +356,14 @@ public final class SwingRenderer implements Renderer {
 			paintInputLayerH(g, numbLines-1);
 		}
 		
+	}
+	
+	private interface Draw extends Comparable<Draw> {
+		/**
+		 * Execute this draw request.
+		 * @param g
+		 * The graphics context that can perform the drawing.
+		 */
+		void draw(Graphics g);
 	}
 }
