@@ -81,4 +81,17 @@ public interface Board extends Component {
 	 */
 	public Piece getPieceAt(int x, int y, int z) throws IllegalArgumentException;
 	
+	/**
+	 * Get the next free Y location in an (x,z) column.
+	 * @param x
+	 * The horizontal location of the column.
+	 * @param z
+	 * The depth of the column.
+	 * @return
+	 * The next free Y element in the (x,z) column OR -1 if the column is full.
+	 * @throws IllegalArgumentException
+	 * Thrown if the (x,z) location is not valid for the board.
+	 */
+	public int getNextFree(int x, int z) throws IllegalArgumentException;
+	
 }

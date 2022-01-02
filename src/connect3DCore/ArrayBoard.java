@@ -101,7 +101,7 @@ final class ArrayBoard implements Board {
 	 * @throws IllegalArgumentException
 	 *  Thrown if (x,z) column is full to signal to the caller that it is full.
 	 */
-	private int getNextFree(int x, int z) throws IllegalArgumentException {
+	public int getNextFree(int x, int z) throws IllegalArgumentException {
 		//Start at y == 0 and work up until failure.
 		for(int y = 0; y < pieces.length; y++) {
 			if(isLocValid(x, y, z) && getPieceAt(x, y, z) == EMPTY) return y;
