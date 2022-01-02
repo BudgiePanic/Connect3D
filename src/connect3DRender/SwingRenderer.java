@@ -198,6 +198,15 @@ public final class SwingRenderer implements Renderer {
 		 */
 		private final int spaceY;
 		/**
+		 * The column that the mouse is being hovered in
+		 */
+		private volatile int cursorX;
+		/**
+		 * The row that the mouse is being hovered in
+		 */
+		private volatile int cursorY;
+		
+		/**
 		 * Create a new panel.
 		 * Comes initialized with a mouse listener that reports user events.
 		 */
@@ -206,7 +215,6 @@ public final class SwingRenderer implements Renderer {
 			int paddingColumns = 2;
 			spaceX = (SwingRenderer.WIDTH / (dimension + paddingColumns))+1;
 			spaceY = (SwingRenderer.HEIGHT / (dimension + paddingColumns));
-			System.out.println(WIDTH+" "+HEIGHT);
 			assert spaceX != 0;
 			assert spaceY != 0;
 		}
@@ -224,13 +232,21 @@ public final class SwingRenderer implements Renderer {
 					@Override
 					public void mouseClicked(MouseEvent e) {
 						//System.out.println(e.getX()+" "+e.getY());
+						//System.out.println(toBoardSpaceX(e.getX())+" "+toBoardSpaceY(e.getY())+"\n");
+						SwingRenderer.this.x = toBoardSpaceX(e.getX()) - 1;
+						SwingRenderer.this.z = toBoardSpaceY(e.getY()) - 1;
+						SwingRenderer.this.message = "place";
+						SwingRenderer.this.notifyObservers();
 					}
 					@Override
 					public void mousePressed(MouseEvent e) {}
 					@Override
 					public void mouseReleased(MouseEvent e) {}
 					@Override
-					public void mouseEntered(MouseEvent e) {}
+					public void mouseEntered(MouseEvent e) {
+						cursorX = toBoardSpaceX(e.getX());
+						cursorY = toBoardSpaceY(e.getY());
+					}
 					@Override
 					public void mouseExited(MouseEvent e) {}
 				}
@@ -241,9 +257,47 @@ public final class SwingRenderer implements Renderer {
 					public void mouseDragged(MouseEvent e) {}
 
 					@Override
-					public void mouseMoved(MouseEvent e) {}
+					public void mouseMoved(MouseEvent e) {
+						int x,y;
+						x = toBoardSpaceX(e.getX());
+						y = toBoardSpaceY(e.getY());
+						if(x != cursorX || y != cursorY) {
+							cursorX = x; cursorY = y;
+							//System.out.println("MouseMoved->"+x+" "+y);
+							SwingRenderer.this.x = x - 1;
+							SwingRenderer.this.z = y - 1;
+							SwingRenderer.this.message = "hover";
+							SwingRenderer.this.notifyObservers();
+						}
+					}
 				}
 			);
+		}
+		
+		/**
+		 * Converts a screen x coordinate to a selection space x coordinate
+		 * @param x
+		 *  A screen space X location
+		 * @return
+		 *  The board space equivalent of this location
+		 */
+		private int toBoardSpaceX(int x) {
+			float screenX = x;
+			float columnWidth = this.spaceX;
+			return (int) (screenX / columnWidth);
+		}
+		
+		/**
+		 * Converts a screen y coordinate to a selection space y coordinate
+		 * @param y
+		 *  A screen space Y location
+		 * @return
+		 *  The board space equivalent of this location
+		 */
+		private int toBoardSpaceY(int y) {
+			float screenY = y;
+			float rowWidth = this.spaceY;
+			return (int) (screenY / rowWidth);
 		}
 		
 		//PAINT CODE BELOW THIS POINT
