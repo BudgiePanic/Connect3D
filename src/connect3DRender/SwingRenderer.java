@@ -25,6 +25,12 @@ import connect3DCore.Piece;
 public final class SwingRenderer implements Renderer {
 	
 	/**
+	 * The dimension of the board we are drawing.
+	 * This field is used to convert mouse clicks into user input.
+	 */
+	private final int dimension;
+	
+	/**
 	 * Store list of objects that are interested in receiving updates from the renderer.
 	 */
 	private final List<Observer> observers = new ArrayList<>(1);
@@ -58,7 +64,10 @@ public final class SwingRenderer implements Renderer {
 	/**
 	 * Package private constructor so only the Render Factory can instantiate it.
 	 */
-	SwingRenderer(){}
+	SwingRenderer(int dimension){
+		assert dimension >= 4;
+		this.dimension = dimension;
+	}
 
 	@Override
 	public void drawCylinderAt(int x, int y, int z, float radius, float height) {
@@ -117,8 +126,8 @@ public final class SwingRenderer implements Renderer {
 				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				window.setResizable(false);
 				window.setPreferredSize(new Dimension(WIDTH,HEIGHT));
-//				window.add(new DrawPanel());
-				window.add(new JPanel() {
+				window.add(new DrawPanel());
+				/*window.add(new JPanel() {
 					{
 						setSize(WIDTH,HEIGHT);
 						setPreferredSize(new Dimension(WIDTH,HEIGHT));
@@ -131,7 +140,7 @@ public final class SwingRenderer implements Renderer {
 						g.setColor(Color.BLUE);
 						g.fillOval(10,10,30,30);
 					}
-				});
+				});*/
 				window.validate();
 				window.pack();
 				window.setVisible(true);
@@ -165,7 +174,7 @@ public final class SwingRenderer implements Renderer {
 			c.draw(this);
 		}
 		
-		/*try {
+		try {
 			SwingUtilities.invokeAndWait(() -> {
 				//window.revalidate();
 				//window.repaint();
@@ -173,7 +182,7 @@ public final class SwingRenderer implements Renderer {
 			);
 		} catch (InvocationTargetException | InterruptedException b) {
 			throw new RuntimeException(b);
-		}*/
+		}
 	}
 
 	@Override
@@ -186,19 +195,91 @@ public final class SwingRenderer implements Renderer {
 		return this.drawables.remove(c);
 	}
 
-	/*private class DrawPanel extends JPanel {
+	/**
+	 * Panel that performs IO for the swing renderer.
+	 * Input via a mouse listener.
+	 * @author Benjamin
+	 *
+	 */
+	private class DrawPanel extends JPanel {
+		private static final long serialVersionUID = -6549532872100015668L;
+		/**
+		 * Amount of pixels needed to achieve evenly spaced lines horizontally.
+		 */
+		private final int spaceX;
+		/**
+		 * Amount of pixels needed to achieve evenly spaced lines vertically.
+		 */
+		private final int spaceY;
+		/**
+		 * Create a new panel.
+		 * Comes initialized with a mouse listener that reports user events.
+		 */
 		DrawPanel(){
+			init();
+			int paddingColumns = 2;
+			spaceX = (SwingRenderer.WIDTH / (dimension + paddingColumns))+1;
+			spaceY = (SwingRenderer.HEIGHT / (dimension + paddingColumns));
+			System.out.println(WIDTH+" "+HEIGHT);
+			assert spaceX != 0;
+			assert spaceY != 0;
+		}
+		
+		/**
+		 * Get the draw panel ready.
+		 */
+		private void init() {
 			setSize(WIDTH,HEIGHT);
 			setPreferredSize(new Dimension(WIDTH,HEIGHT));
 			setOpaque(true);
 			setBackground(Color.WHITE);
+			//add mouse motion listener TODO
 		}
-		
+
 		@Override
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
-			g.setColor(Color.BLUE);
-			g.fillOval(10,10,30,30);
+			paintInputLayerH(g, dimension+1);
+			paintInputLayerV(g, dimension+1);
 		}
-	}*/
+		
+		/**
+		 * Draw the vertical lines that are used to show the grid for valid inputs.
+		 * @param g
+		 *  The graphics context
+		 * @param numbLines 
+		 *  The number of lines to draw
+		 */
+		private void paintInputLayerV(Graphics g, int numbLines) {
+			if(numbLines <= 0) {return;}
+			int depth = numbLines * this.spaceY;
+			int x1,y1,x2,y2;
+			y1 = depth;
+			y2 = y1;
+			x1 = this.spaceX;
+			x2 = SwingRenderer.WIDTH - this.spaceX;
+			g.drawLine(x1,y1,x2,y2);
+			paintInputLayerV(g, numbLines-1);
+		}
+
+		/**
+		 * Draw the horizontal lines that are used to show the grid for valid inputs.
+		 * @param g
+		 *  Graphics context
+		 * @param numbLines 
+		 *  The number of lines to draw
+		 */
+		private void paintInputLayerH(Graphics g, int numbLines) {
+			if(numbLines <= 0) {return;}
+			int offset = numbLines * this.spaceX;
+			int x1,y1,x2,y2;
+			x1 = offset;
+			x2 = x1;
+			y1 = this.spaceY;
+			y2 = SwingRenderer.HEIGHT - spaceY;
+			g.drawLine(x1,y1,x2,y2);
+			paintInputLayerH(g, numbLines-1);
+		}
+		
+	}
 }
