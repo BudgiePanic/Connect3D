@@ -61,6 +61,11 @@ public final class SwingRenderer implements Renderer {
 	
 	//drawing fields
 	private final List<Draw> drawRequests = new ArrayList<Draw>();
+
+	/**
+	 * The current color.
+	 */
+	private Piece color;
 	
 	
 	/**
@@ -98,8 +103,7 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public void setActiveColor(Piece p) {
-		// TODO Auto-generated method stub
-
+		this.color = p;
 	}
 
 	@Override
@@ -269,6 +273,7 @@ public final class SwingRenderer implements Renderer {
 							//System.out.println("MouseMoved->"+x+" "+y);
 							SwingRenderer.this.x = x - 1;
 							SwingRenderer.this.z = y - 1;
+							SwingRenderer.this.y = -1;
 							SwingRenderer.this.message = "hover";
 							SwingRenderer.this.notifyObservers();
 						}
