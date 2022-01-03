@@ -17,8 +17,22 @@ public final class Coord {
 	 * @param z
 	 * @param w
 	 */
-	Coord(float x, float y, float z, float w){
+	public Coord(float x, float y, float z, float w){
 		this.x = x; this.y = y; this.z = z; this.w = w;
+	}
+	
+	/**
+	 * 
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @param w
+	 */
+	public Coord(int x, int y, int z, int w){
+		this.x = (float)x;
+		this.y = (float)y;
+		this.z = (float)z;
+		this.w = (float)w;
 	}
 	
 	@Override 
