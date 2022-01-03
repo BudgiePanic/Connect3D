@@ -1,6 +1,4 @@
 package connect3DUtil;
-
-import java.math.*;
 /**
  * Utility math functions for the Swing renderer.
  * @author Benjamin
@@ -69,6 +67,7 @@ public class MathUtil {
 	 * A new coordinate that is divided by the factor.
 	 */
 	public static Coord3D divide(Coord3D c, double factor) {
+		if(factor >= 0 && factor <= 0.000001) throw new IllegalArgumentException("Cannot divide by zero ->"+factor);
 		return new Coord3D(c.x / factor, 
 							c.y / factor, 
 							 c.z / factor);
@@ -131,6 +130,28 @@ public class MathUtil {
 	 * A new Coordinate that is the same as the input, but normalized.
 	 */
 	public static Coord3D normalize(Coord3D c) {
-		return new Coord3D(1,2,3);
+		return divide(c, c.magnitude());
+	}
+	
+	/**
+	 * Convert a Eular angle in degrees to an angle in Radians.
+	 * @param angle
+	 * The Eular angle.
+	 * @return
+	 * The same angle but in Radians.
+	 */
+	public static double toRadians(double angle) {
+		return angle * (Math.PI / 180.0);
+	}
+	
+	/**
+	 * Convert an angle in Radians to an angle in degrees.
+	 * @param angle
+	 * The angle in Radians.
+	 * @return
+	 * The same angle in degrees.
+	 */
+	public static double toDegrees(double angle) {
+		return angle * (180.0 / Math.PI);
 	}
 }
