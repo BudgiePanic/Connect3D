@@ -29,6 +29,9 @@ public class MathUtil {
 		public double magnitude() {
 			return Math.sqrt((x*x) + (y*y) + (z*z));
 		}
+		
+		@Override
+		public String toString() { return x+":"+y+":"+z; }
 	}
 	
 	/**
@@ -153,5 +156,102 @@ public class MathUtil {
 	 */
 	public static double toDegrees(double angle) {
 		return angle * (180.0 / Math.PI);
+	}
+	
+	/**
+	 * 
+	 * @author Benjamin
+	 *
+	 */
+	public static class Matrix4 {
+		/**
+		 * Internal matrix representation.
+		 * Row -> column
+		 */
+		public final double[][] m;
+		
+		/**
+		 * Create a new Matrix;
+		 * @param m
+		 * Manually specified matrix values.
+		 */
+		public Matrix4(final double[][] m) {
+			this.m = m;
+		}
+		
+	}
+	
+	/**
+	 * Create a projection matrix.
+	 * @param near
+	 * @param far
+	 * @param fov
+	 * @param aspectRatio
+	 * @return
+	 */
+	public static Matrix4 createProjectionM(double near, double far, double fov, double aspectRatio) {
+		// 1 / tan (fov / 2)
+		double a = aspectRatio;
+		double f = 1.0 / Math.tan(toRadians(fov) / 2.0);
+		double q = far / (far - near);
+		
+		double[][] m = new double[4][4];
+		for(int x = 0; x < 4; x++) {
+			for(int y = 0; y < 4; y++) {
+				 m[x][y] = 0.0;
+			}
+		}
+		
+		m[0][0] = a * f;
+		m[1][1] = f;
+		m[2][2] = q;
+		m[3][2] = -q * near;
+		m[2][3] = 1.0;
+		
+		return new Matrix4(m);
+	}
+	
+	/**
+	 * multiply a coord3D by the matrix m. Implicitly creates a 4D coord with w = 1 to perform the calculation.
+	 * @param v
+	 * the coord.
+	 * @param m
+	 * the matrix.
+	 * @return
+	 * the result of multiplying v by m.
+	 */
+	public static Coord3D multiply(Coord3D v, Matrix4 m) {
+		assert v != null; assert m!= null; assert m.m != null;
+		
+		double vw = 1.0;
+		double x = (v.x * m.m[0][0]) + (v.y * m.m[1][0]) + (v.z * m.m[2][0]) + (vw * m.m[3][0]);
+		double y = (v.x * m.m[0][1]) + (v.y * m.m[1][1]) + (v.z * m.m[2][1]) + (vw * m.m[3][1]);
+		double z = (v.x * m.m[0][2]) + (v.y * m.m[1][2]) + (v.z * m.m[2][2]) + (vw * m.m[3][2]);
+		double w = (v.x * m.m[0][3]) + (v.y * m.m[1][3]) + (v.z * m.m[2][3]) + (vw * m.m[3][3]);
+		
+		if(w != 0.0) return new Coord3D(x/w, y/w, z/w); //return a normalized vector
+		
+		return new Coord3D(x,y,z);
+	}
+	
+	/**
+	 * Takes a coordinate in normalized device space and converts it to an equivalent point on an (A,B) screen.
+	 * The Z depth value is unchanged.
+	 * @param c
+	 * The coordinate being transformed to pixel space from ND space.
+	 * @param screenWidth
+	 * The width of the screen.
+	 * @param screenHeight
+	 * The height of the screen.
+	 * @return
+	 * The same coordinate but in pixel space.
+	 */
+	public static Coord3D toScreenSpace(Coord3D c, int screenWidth, int screenHeight) {
+		double x = c.x + 1.0;
+		x *= 0.5 * screenWidth;
+		double y = c.y + 1.0;
+		y *= 0.5 * screenHeight;
+		double z = c.z;
+		return new Coord3D(x,y,z);
 	}
 }
