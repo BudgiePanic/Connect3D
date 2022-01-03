@@ -17,6 +17,9 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 import connect3DCore.Piece;
+import connect3DUtil.Coord;
+import connect3DUtil.MathUtil.Coord3D;
+import static connect3DUtil.MathUtil.*;
 
 /**
  * Uses java swing to display the game to the players and get player input.
@@ -30,6 +33,11 @@ public final class SwingRenderer implements Renderer {
 	 * This field is used to convert mouse clicks into user input.
 	 */
 	private final int dimension;
+	
+	/**
+	 * The current color.
+	 */
+	private Piece color;
 	
 	/**
 	 * Store list of objects that are interested in receiving updates from the renderer.
@@ -62,10 +70,8 @@ public final class SwingRenderer implements Renderer {
 	//drawing fields
 	private final List<Draw> drawRequests = new ArrayList<Draw>();
 
-	/**
-	 * The current color.
-	 */
-	private Piece color;
+	//the virtual camera that is moved by user input
+	private volatile Matrix4 projection;
 	
 	
 	/**
@@ -87,7 +93,8 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public void drawSphereAt(int x, int y, int z, float radius) {
-		//this.drawRequests.add(new Draw(x,y,z,SPHERE));
+		if(this.color == Piece.EMPTY) return; //don't draw transparent stuff.
+		drawRequests.add();
 	}
 
 	@Override
@@ -320,6 +327,8 @@ public final class SwingRenderer implements Renderer {
 			for(Draw d : SwingRenderer.this.drawRequests) {
 				d.draw(g);
 			}
+			
+			//g.fillOval(50, 50, 50, 50);
 		}
 		
 		/**
@@ -362,12 +371,58 @@ public final class SwingRenderer implements Renderer {
 		
 	}
 	
-	private interface Draw extends Comparable<Draw> {
+	/**
+	 * Helper class to encapsulate draw calls from drawable objects.
+	 * @author Benjamin
+	 *
+	 */
+	private abstract class Draw implements Comparable<Draw> {
+		
+		private Coord3D projected = null;
+		private final Coord3D location;
+		private final Coord3D push = new Coord3D(0,0,-5);
+		private final Piece color;
+		
+		/**
+		 * Create a new draw request.
+		 * @param location
+		 * The world space location of the draw.
+		 * @param color
+		 * The color of the draw.
+		 */
+		Draw(Coord3D location, Piece color){
+			assert color != Piece.EMPTY;
+			this.location = location;
+			this.color = color;
+		}
+		
+		@Override
+		public int compareTo(Draw o) {
+			Coord3D me = getProjected();
+			Coord3D other = o.getProjected();
+			if(me.z > other.z) return -1;
+			if(other.z > me.z) return 1;
+			return 0;
+		}
+		
+		/**
+		 * Get this draw call's Screenspace transformation.
+		 * @return
+		 * The location of the draw call in screen space.
+		 */
+		Coord3D getProjected() {
+			if(this.projected == null) {
+				Matrix4 proj = SwingRenderer.this.projection;
+				Coord3D ndc = multiply(location, proj);
+				projected = add(ndc, push); 
+			}
+			return projected;
+		}
+		
 		/**
 		 * Execute this draw request.
 		 * @param g
-		 * The graphics context that can perform the drawing.
 		 */
-		void draw(Graphics g);
+		abstract void draw(Graphics g);
 	}
 }
