@@ -192,8 +192,7 @@ public class MathUtil {
 	public static Matrix4 createProjectionM(double near, double far, double fov, double aspectRatio) {
 		// 1 / tan (fov / 2)
 		double a = aspectRatio;
-		double f = 1.0 / Math.tan(toRadians(fov) / 2.0);
-		double q = far / (far - near);
+		double f = 1.0 / Math.tan(toRadians(fov) * 0.5);
 		
 		double[][] m = new double[4][4];
 		for(int x = 0; x < 4; x++) {
@@ -204,8 +203,8 @@ public class MathUtil {
 		
 		m[0][0] = a * f;
 		m[1][1] = f;
-		m[2][2] = q;
-		m[3][2] = -q * near;
+		m[2][2] = far / (far - near);
+		m[3][2] = (-far * near) / (far - near);
 		m[2][3] = 1.0;
 		
 		return new Matrix4(m);
@@ -252,6 +251,7 @@ public class MathUtil {
 		double y = c.y + 1.0;
 		y *= 0.5 * screenHeight;
 		double z = c.z;
+		System.out.println("screenSpace->"+c.x+" "+c.y+" "+c.z+"=>>"+x+" "+y);
 		return new Coord3D(x,y,z);
 	}
 }
