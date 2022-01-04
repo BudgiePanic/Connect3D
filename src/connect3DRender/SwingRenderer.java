@@ -94,17 +94,30 @@ public final class SwingRenderer implements Renderer {
 	@Override
 	public void drawSphereAt(int x, int y, int z, float radius) {
 		if(this.color == Piece.EMPTY) return; //don't draw transparent stuff.
-		drawRequests.add();
+		drawRequests.add(new Draw(new Coord3D(x,y,z), color, true) {
+			@Override
+			void draw(Graphics g) {
+				Coord3D screen = toScreenSpace(getProjected(), WIDTH, HEIGHT);
+				int a = (int)screen.x;
+				int b = (int)screen.y;
+				int size = 50 - (5 * (int)location.z);
+				System.out.println("Sphere at: ["+this.location+"] proj'd to: ["+this.getProjected()+"] has screen: ["+screen+"]");
+				Color old = g.getColor();
+				g.setColor(Color.BLACK);
+				g.fillOval(a-1,b-1,size+2,size+2);
+				g.setColor(this.color.color());
+				g.fillOval(a,b,size,size);
+				g.setColor(old);
+			}
+		});
 	}
 
 	@Override
 	public void drawMessage(String msg) {
 		assert msg != null;
-		this.drawRequests.add(new Draw() {
+		this.drawRequests.add(new Draw(null, null, false) {
 			@Override
-			public int compareTo(Draw o) { return 1; }
-			@Override
-			public void draw(Graphics g) { g.drawString(msg, 5,25); }
+			void draw(Graphics g) { g.drawString(msg, 5,25); }
 		});
 	}
 
@@ -151,6 +164,8 @@ public final class SwingRenderer implements Renderer {
 			e.printStackTrace();
 			throw new InitializationException();
 		} //end of SU.invL8R
+		double aspect = (double) HEIGHT / (double) WIDTH;
+		this.projection = createProjectionM(0.1, 100.0, 180.0, aspect);
 	}
 
 	@Override
@@ -167,15 +182,15 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public void redraw() throws IllegalStateException {
-		this.drawRequests.clear();
-		for(Component c : drawables) {
-			c.draw(this); //collect draw requests from the scene
-		}
-		
 		try {
 			SwingUtilities.invokeAndWait(() -> {
+				this.drawRequests.clear();
+				for(Component c : drawables) {
+					c.draw(this); //collect draw requests from the scene
+				}
 				//sort the draw Requests, furtherest away first.
 				Collections.sort(this.drawRequests);
+				Collections.reverse(this.drawRequests);
 				//window.revalidate();
 				window.repaint(); //window itself will traverse the list and draw the objects
 			}
@@ -378,10 +393,10 @@ public final class SwingRenderer implements Renderer {
 	 */
 	private abstract class Draw implements Comparable<Draw> {
 		
+		public final boolean inWorld;
 		private Coord3D projected = null;
-		private final Coord3D location;
-		private final Coord3D push = new Coord3D(0,0,-5);
-		private final Piece color;
+		public final Coord3D location;
+		protected final Piece color;
 		
 		/**
 		 * Create a new draw request.
@@ -389,17 +404,20 @@ public final class SwingRenderer implements Renderer {
 		 * The world space location of the draw.
 		 * @param color
 		 * The color of the draw.
+		 * @param inWorld
+		 * True if this draw call is for an in world object that can be compared to others. 
 		 */
-		Draw(Coord3D location, Piece color){
-			assert color != Piece.EMPTY;
+		Draw(Coord3D location, Piece color, boolean inWorld){
 			this.location = location;
 			this.color = color;
+			this.inWorld = inWorld;
 		}
 		
 		@Override
 		public int compareTo(Draw o) {
-			Coord3D me = getProjected();
-			Coord3D other = o.getProjected();
+			if(!inWorld || !o.inWorld) return 1;
+			Coord3D me = this.location;
+			Coord3D other = o.location;
 			if(me.z > other.z) return -1;
 			if(other.z > me.z) return 1;
 			return 0;
@@ -411,10 +429,11 @@ public final class SwingRenderer implements Renderer {
 		 * The location of the draw call in screen space.
 		 */
 		Coord3D getProjected() {
+			assert inWorld == true;
 			if(this.projected == null) {
 				Matrix4 proj = SwingRenderer.this.projection;
 				Coord3D ndc = multiply(location, proj);
-				projected = add(ndc, push); 
+				projected = ndc; 
 			}
 			return projected;
 		}
@@ -422,6 +441,7 @@ public final class SwingRenderer implements Renderer {
 		/**
 		 * Execute this draw request.
 		 * @param g
+		 * The SwingRenderer's grahics context
 		 */
 		abstract void draw(Graphics g);
 	}
