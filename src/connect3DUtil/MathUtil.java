@@ -251,7 +251,7 @@ public class MathUtil {
 		double y = c.y + 1.0;
 		y *= 0.5 * screenHeight;
 		double z = c.z;
-		System.out.println("screenSpace->"+c.x+" "+c.y+" "+c.z+"=>>"+x+" "+y);
+		//System.out.println("screenSpace->"+c.x+" "+c.y+" "+c.z+"=>>"+x+" "+y);
 		return new Coord3D(x,y,z);
 	}
 }
