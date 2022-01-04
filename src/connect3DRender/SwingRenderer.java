@@ -99,7 +99,7 @@ public final class SwingRenderer implements Renderer {
 			void draw(Graphics g) {
 				Coord3D screen = toScreenSpace(getProjected(), WIDTH, HEIGHT);
 				int a = (int)screen.x;
-				int b = (int)screen.y;
+				int b = HEIGHT - (int)screen.y;
 				int size = 50 - (5 * (int)location.z);
 				System.out.println("Sphere at: ["+this.location+"] proj'd to: ["+this.getProjected()+"] has screen: ["+screen+"]");
 				Color old = g.getColor();
@@ -165,7 +165,7 @@ public final class SwingRenderer implements Renderer {
 			throw new InitializationException();
 		} //end of SU.invL8R
 		double aspect = (double) HEIGHT / (double) WIDTH;
-		this.projection = createProjectionM(0.1, 100.0, 180.0, aspect);
+		this.projection = createProjectionM(0.1, 100.0, 70.0, aspect);
 	}
 
 	@Override
@@ -190,7 +190,7 @@ public final class SwingRenderer implements Renderer {
 				}
 				//sort the draw Requests, furtherest away first.
 				Collections.sort(this.drawRequests);
-				Collections.reverse(this.drawRequests);
+				//Collections.reverse(this.drawRequests);
 				//window.revalidate();
 				window.repaint(); //window itself will traverse the list and draw the objects
 			}
@@ -432,7 +432,8 @@ public final class SwingRenderer implements Renderer {
 			assert inWorld == true;
 			if(this.projected == null) {
 				Matrix4 proj = SwingRenderer.this.projection;
-				Coord3D ndc = multiply(location, proj);
+				//translate the location away from 0,0,0 origin
+				Coord3D ndc = multiply(add(location,new Coord3D(0,0, 5)), proj);
 				projected = ndc; 
 			}
 			return projected;
