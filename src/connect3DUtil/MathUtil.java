@@ -31,7 +31,7 @@ public class MathUtil {
 		}
 		
 		@Override
-		public String toString() { return x+":"+y+":"+z; }
+		public String toString() { return x+" | "+y+" | "+z; }
 	}
 	
 	/**
