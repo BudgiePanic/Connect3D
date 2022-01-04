@@ -101,7 +101,7 @@ public final class SwingRenderer implements Renderer {
 				int a = (int)screen.x;
 				int b = HEIGHT - (int)screen.y;
 				int size = 50 - (5 * (int)location.z);
-				System.out.println("Sphere at: ["+this.location+"] proj'd to: ["+this.getProjected()+"] has screen: ["+screen+"]");
+				//System.out.println("Sphere at: ["+this.location+"] proj'd to: ["+this.getProjected()+"] has screen: ["+screen+"]");
 				Color old = g.getColor();
 				g.setColor(Color.BLACK);
 				g.fillOval(a-1,b-1,size+2,size+2);
