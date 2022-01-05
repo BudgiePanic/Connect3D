@@ -67,11 +67,34 @@ public final class SwingRenderer implements Renderer {
 	private volatile int x,y,z;
 	private volatile String message;
 	
-	//drawing fields
-	private final List<Draw> drawRequests = new ArrayList<Draw>();
+	/**
+	 * Store of draw requests made by components registered to this renderer.
+	 */
+	private volatile List<Draw> drawRequests = new ArrayList<Draw>();
 
-	//the virtual camera that is moved by user input
+	/**
+	 * A matrix that converts from world space coordinates to normalized device coordinates.
+	 */
 	private volatile Matrix4 projection;
+	
+	/**
+	 * A matrix that rotates coordinates horizontally along the X axis.
+	 */
+	private volatile Matrix4 rotateH;
+	
+	/**
+	 * A matrix that rotates coordinates vertically about the Z axis.
+	 */
+	private volatile Matrix4 rotateV;
+	
+	/**
+	 * The 'up/down' angle the user has specified
+	 */
+	private volatile double pitch;
+	/**
+	 * The 'left/right' angle the user has specified.
+	 */
+	private volatile double yaw;
 	
 	
 	/**
@@ -146,6 +169,12 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public void initialize() throws InitializationException {
+		double aspect = (double) HEIGHT / (double) WIDTH;
+		this.projection = createProjectionM(0.1, 100.0, 70.0, aspect);
+		this.pitch = 0.0;
+		this.yaw = 0.0;
+		this.rotateH = makeRotationMatrixX(pitch);
+		this.rotateV = makeRotationMatrixZ(yaw);
 		try {
 			SwingUtilities.invokeAndWait(() -> {
 				window = new JFrame("Connect3D");
@@ -164,8 +193,6 @@ public final class SwingRenderer implements Renderer {
 			e.printStackTrace();
 			throw new InitializationException();
 		} //end of SU.invL8R
-		double aspect = (double) HEIGHT / (double) WIDTH;
-		this.projection = createProjectionM(0.1, 100.0, 70.0, aspect);
 	}
 
 	@Override
