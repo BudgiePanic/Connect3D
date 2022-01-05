@@ -9,6 +9,7 @@ import connect3DCore.Piece;
 import connect3DRender.InitializationException;
 import connect3DRender.Observer;
 import connect3DRender.Renderer;
+import connect3DUtil.Coord;
 
 /**
  * Main game thread. 
@@ -25,6 +26,7 @@ public final class Game implements Runnable, Observer {
 	private Board board;
 	private final int BOARD_SIZE;
 	private int currentPlayer;
+	private Coord currentSelect;
 	
 	/**
 	 * Games need a renderer to perform IO through.
@@ -62,6 +64,18 @@ public final class Game implements Runnable, Observer {
 			//Anonymous component to display the current player.
 			g.drawMessage(players.get(currentPlayer).name()+"'s Turn");
 		});
+		renderer.addComponent((g) -> {
+			if(currentSelect == null) return;
+			int x = (int)this.currentSelect.x;
+			int z = (int)this.currentSelect.z;
+			if(board.isXZvalid(x, z)) {
+				int y = board.getNextFree(x, z);
+				if(y >= 0) {
+					g.setActiveColor(Piece.WHITE);
+					g.drawSphereAt(x, y, z, 1);
+				}
+			}
+		});
 		
 	}
 	
@@ -89,6 +103,9 @@ public final class Game implements Runnable, Observer {
 				System.exit(0);
 			case "place":
 				placeAt(x,z);
+				break;
+			case "hover":
+				this.currentSelect = new Coord(x,y,z,-1);
 				break;
 			default:
 				System.out.println("Unrecognized input: "+type);
