@@ -21,8 +21,8 @@ public final class RenderFactory {
 	 */
 	public static Renderer Renderer(String type, int boardDimension) throws IllegalArgumentException {
 		//currently only supports the text renderer
-		if(type.toLowerCase() == "text") return new TextRenderer(boardDimension);
-		if(type.toLowerCase() == "software") return new SwingRenderer(boardDimension);
+		if(type.toLowerCase().equals("text")) return new TextRenderer(boardDimension);
+		if(type.toLowerCase().equals("software")) return new SwingRenderer(boardDimension);
 		throw new IllegalArgumentException("Unknown renderer type! ->"+type);
 	}
 }

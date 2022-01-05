@@ -335,7 +335,7 @@ public final class TextRenderer implements Renderer {
 
 			@Override
 			int cull(Draw d1, Draw d2) {
-				if(d1.x == d2.x && d1.y == d1.y) {
+				if(d1.x == d2.x && d1.y == d2.y) {
 					if(d1.z < d2.z) return 1; //d1 is closer, keep it
 					return -1; //d2 must be closer, keep d2
 				}
