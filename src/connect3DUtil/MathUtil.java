@@ -307,4 +307,29 @@ public class MathUtil {
 		
 		return new Matrix4(m);
 	}
+	
+	/**
+	 * Creates a rotation matrix that rotates points about the Y axis.
+	 * @param angle
+	 * The amount of rotation.
+	 * @return
+	 * A matrix that rotates about the Y axis by angle degrees.
+	 */
+	public static Matrix4 makeRotationMatrixY(double angle) {
+		double[][] m = new double[4][4];
+		for(int x = 0; x < 4; x++) {
+			for(int y = 0; y < 4; y++) {
+				 m[x][y] = 0.0;
+			}
+		}
+		
+		m[0][0] = Math.cos(angle);
+		m[1][1] = 1.0;
+		m[3][3] = 1.0; // my addition
+		m[2][0] = Math.sin(angle);
+		m[0][2] = -Math.sin(angle);
+		m[2][2] = Math.cos(angle);
+		
+		return new Matrix4(m);
+	}
 }
