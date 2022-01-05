@@ -78,14 +78,19 @@ public final class SwingRenderer implements Renderer {
 	private volatile Matrix4 projection;
 	
 	/**
-	 * A matrix that rotates coordinates horizontally along the X axis.
+	 * A matrix that rotates coordinates horizontally along the X axis using the Y axis rotation matrix.
 	 */
 	private volatile Matrix4 rotateH;
 	
 	/**
-	 * A matrix that rotates coordinates vertically about the Z axis.
+	 * A matrix that rotates coordinates vertically about the Z axis using the X axis rotation matrix.
 	 */
 	private volatile Matrix4 rotateV;
+	
+	/**
+	 * A matrix that 'rolls' coordinates using the Z axis.
+	 */
+	private volatile Matrix4 rotateR;
 	
 	/**
 	 * The 'up/down' angle the user has specified
@@ -123,8 +128,8 @@ public final class SwingRenderer implements Renderer {
 				Coord3D screen = toScreenSpace(getProjected(), WIDTH, HEIGHT);
 				int a = (int)screen.x;
 				int b = HEIGHT - (int)screen.y;
-				int size = 50 - (5 * (int)location.z);
-				//System.out.println("Sphere at: ["+this.location+"] proj'd to: ["+this.getProjected()+"] has screen: ["+screen+"]");
+				int size = 30 - (5 * (int)getRotated().z);
+				//System.out.println("Sphere at: ["+this.location+"] rotated to: ["+this.getRotated()+"]"+" has proj: ["+this.getProjected()+"]");
 				Color old = g.getColor();
 				g.setColor(Color.BLACK);
 				g.fillOval(a-1,b-1,size+2,size+2);
@@ -145,19 +150,13 @@ public final class SwingRenderer implements Renderer {
 	}
 
 	@Override
-	public void setActiveColor(Piece p) {
-		this.color = p;
-	}
+	public void setActiveColor(Piece p) { this.color = p; }
 
 	@Override
-	public void addObserver(Observer o) {
-		observers.add(o);
-	}
+	public void addObserver(Observer o) { observers.add(o); }
 
 	@Override
-	public void removeObserver(Observer o) {
-		observers.remove(o);
-	}
+	public void removeObserver(Observer o) { observers.remove(o); }
 
 	@Override
 	public void notifyObservers() {
@@ -173,8 +172,9 @@ public final class SwingRenderer implements Renderer {
 		this.projection = createProjectionM(0.1, 100.0, 70.0, aspect);
 		this.pitch = 0.0;
 		this.yaw = 0.0;
-		this.rotateH = makeRotationMatrixX(pitch);
-		this.rotateV = makeRotationMatrixZ(yaw);
+		this.rotateH = makeRotationMatrixY(pitch);
+		this.rotateV = makeRotationMatrixX(yaw);
+		this.rotateR = makeRotationMatrixZ(0.0); // don't 'roll' the points.
 		try {
 			SwingUtilities.invokeAndWait(() -> {
 				window = new JFrame("Connect3D");
@@ -211,6 +211,8 @@ public final class SwingRenderer implements Renderer {
 	public void redraw() throws IllegalStateException {
 		try {
 			SwingUtilities.invokeAndWait(() -> {
+				this.rotateH = makeRotationMatrixY(yaw);
+				this.rotateV = makeRotationMatrixX(pitch);
 				this.drawRequests.clear();
 				for(Component c : drawables) {
 					c.draw(this); //collect draw requests from the scene
@@ -228,14 +230,10 @@ public final class SwingRenderer implements Renderer {
 	}
 
 	@Override
-	public void addComponent(Component c) {
-		this.drawables.add(c);
-	}
+	public void addComponent(Component c) { this.drawables.add(c); }
 
 	@Override
-	public boolean removeComponent(Component c) {
-		return this.drawables.remove(c);
-	}
+	public boolean removeComponent(Component c) { return this.drawables.remove(c); }
 
 	/**
 	 * Panel that performs IO for the swing renderer.
@@ -261,6 +259,16 @@ public final class SwingRenderer implements Renderer {
 		 * The row that the mouse is being hovered in
 		 */
 		private volatile int cursorY;
+		
+		/**
+		 * The last horizontal pixel the mouse was during a drag..
+		 */
+		private volatile int lastX = 0;
+		
+		/**
+		 * The last vertical pixel the mouse was on during a drag;
+		 */
+		private volatile int lastY = 0;
 		
 		/**
 		 * Create a new panel.
@@ -310,7 +318,15 @@ public final class SwingRenderer implements Renderer {
 			addMouseMotionListener(new MouseMotionListener() 
 				{
 					@Override
-					public void mouseDragged(MouseEvent e) {}
+					public void mouseDragged(MouseEvent e) {
+						//add the difference of e.x and lastX to the yaw value
+						//and remake the rotation matrix
+						double sensitvity = 0.5;
+						SwingRenderer.this.yaw += toRadians(e.getX() - lastX) * sensitvity;
+						lastX = e.getX();
+						SwingRenderer.this.pitch += toRadians(e.getY() - lastY) * sensitvity;
+						lastY = e.getY();
+					}
 
 					@Override
 					public void mouseMoved(MouseEvent e) {
@@ -422,6 +438,7 @@ public final class SwingRenderer implements Renderer {
 		
 		public final boolean inWorld;
 		private Coord3D projected = null;
+		private Coord3D rotated = null;
 		public final Coord3D location;
 		protected final Piece color;
 		
@@ -442,9 +459,9 @@ public final class SwingRenderer implements Renderer {
 		
 		@Override
 		public int compareTo(Draw o) {
-			if(!inWorld || !o.inWorld) return 1;
-			Coord3D me = this.location;
-			Coord3D other = o.location;
+			if(!inWorld || !o.inWorld) return 0;
+			Coord3D me = getRotated();
+			Coord3D other = o.getRotated();
 			if(me.z > other.z) return -1;
 			if(other.z > me.z) return 1;
 			return 0;
@@ -459,11 +476,27 @@ public final class SwingRenderer implements Renderer {
 			assert inWorld == true;
 			if(this.projected == null) {
 				Matrix4 proj = SwingRenderer.this.projection;
-				//translate the location away from 0,0,0 origin
-				Coord3D ndc = multiply(add(location,new Coord3D(0,0, 5)), proj);
+				//rotate the point then translate it away from 0,0,0 origin
+				Coord3D ndc = multiply(add(getRotated(),new Coord3D(0,0, 8)), proj);
 				projected = ndc; 
 			}
 			return projected;
+		}
+		
+		/**
+		 * Get this draw call's coordinate after the rotation operation has been applied to it.
+		 * @return
+		 * The location of the draw call after it has been rotated.
+		 */
+		Coord3D getRotated() {
+			if(this.rotated == null) {
+				Matrix4 rotX = SwingRenderer.this.rotateH;
+				Matrix4 rotY = SwingRenderer.this.rotateV;
+				Matrix4 roll = SwingRenderer.this.rotateR;
+				//this.rotated = multiply(multiply(location, rotX), rotY);
+				this.rotated = multiply(multiply(multiply(location, rotX), rotY), roll);
+			}
+			return this.rotated;
 		}
 		
 		/**
