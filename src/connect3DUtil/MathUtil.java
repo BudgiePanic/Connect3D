@@ -254,4 +254,57 @@ public class MathUtil {
 		//System.out.println("screenSpace->"+c.x+" "+c.y+" "+c.z+"=>>"+x+" "+y);
 		return new Coord3D(x,y,z);
 	}
+	
+	/**
+	 * Create a new rotation matrix that will rotate points about the X axis.
+	 * Sneaked from wikipedia.
+	 * @param angle
+	 * The amount of rotation this matrix should apply.
+	 * @return
+	 * A rotation matrix.
+	 */
+	public static Matrix4 makeRotationMatrixX(double angle) {
+		
+		double[][] m = new double[4][4];
+		for(int x = 0; x < 4; x++) {
+			for(int y = 0; y < 4; y++) {
+				 m[x][y] = 0.0;
+			}
+		}
+		
+		m[0][0] = 1.0;
+		m[3][3] = 1.0;
+		
+		m[1][1] = Math.cos(angle);
+		m[2][2] = Math.cos(angle);
+		m[1][2] = Math.sin(angle);
+		m[2][1] = -Math.sin(angle);
+		
+		return new Matrix4(m);
+	}
+	
+	/**
+	 * Creates a new rotation matrix that rotates points around the z axis.
+	 * @param angle
+	 * The amount of rotation this matrix should perform on the points.
+	 * @return
+	 * A new rotation matrix.
+	 */
+	public static Matrix4 makeRotationMatrixZ(double angle) {
+		double[][] m = new double[4][4];
+		for(int x = 0; x < 4; x++) {
+			for(int y = 0; y < 4; y++) {
+				 m[x][y] = 0.0;
+			}
+		}
+		
+		m[0][0] = Math.cos(angle);
+		m[0][1] = Math.sin(angle);
+		m[1][0] = -Math.sin(angle);
+		m[1][1] = Math.cos(angle);
+		m[2][2] = 1.0;
+		m[3][3] = 1.0;
+		
+		return new Matrix4(m);
+	}
 }
