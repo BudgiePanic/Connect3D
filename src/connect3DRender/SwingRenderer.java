@@ -57,11 +57,11 @@ public final class SwingRenderer implements Renderer {
 	/**
 	 * The width of the window in pixels.
 	 */
-	private static final int WIDTH = 640;
+	private static final int WIDTH = 1280;
 	/**
 	 * The height of the window in pixels.
 	 */
-	private static final int HEIGHT = 480;
+	private static final int HEIGHT = 720;
 	
 	//message passing variables. These variables are passed to observers on notifyObservers()
 	private volatile int x,y,z;
@@ -493,8 +493,11 @@ public final class SwingRenderer implements Renderer {
 				Matrix4 rotX = SwingRenderer.this.rotateH;
 				Matrix4 rotY = SwingRenderer.this.rotateV;
 				Matrix4 roll = SwingRenderer.this.rotateR;
+				double offset = -((double)(dimension-1)/2.0);// translate point so board rotates around its centre rather than 0,0,0
+				Coord3D shift = new Coord3D(offset, 0 ,offset);
 				//this.rotated = multiply(multiply(location, rotX), rotY);
-				this.rotated = multiply(multiply(multiply(location, rotX), rotY), roll);
+				//this.rotated = multiply(multiply(multiply(location, rotX), rotY), roll);
+				this.rotated = multiply(multiply(multiply(add(location, shift), rotX), rotY), roll);
 			}
 			return this.rotated;
 		}
