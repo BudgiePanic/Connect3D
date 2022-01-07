@@ -101,6 +101,15 @@ public final class SwingRenderer implements Renderer {
 	 */
 	private volatile double yaw;
 	
+	/**
+	 * A store of the number of milliseconds since the last update call
+	 */
+	private volatile long elapsed;
+	
+	/**
+	 * The maximum pitch value
+	 */
+	private final double pitch_max;
 	
 	/**
 	 * Package private constructor so only the Render Factory can instantiate it.
@@ -111,6 +120,7 @@ public final class SwingRenderer implements Renderer {
 	SwingRenderer(int dimension){
 		assert dimension >= 4;
 		this.dimension = dimension;
+		this.pitch_max = toRadians(45.0);
 	}
 
 	@Override
@@ -185,6 +195,7 @@ public final class SwingRenderer implements Renderer {
 				window.validate();
 				window.pack();
 				window.setVisible(true);
+				this.elapsed = System.currentTimeMillis();
 			});
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();
@@ -211,6 +222,11 @@ public final class SwingRenderer implements Renderer {
 	public void redraw() throws IllegalStateException {
 		try {
 			SwingUtilities.invokeAndWait(() -> {
+				double timeSince = (double)(System.currentTimeMillis() - elapsed)/1000.0;
+				elapsed = System.currentTimeMillis();
+				System.out.println(pitch);
+				if(pitch > pitch_max) pitch = pitch_max;
+				if(pitch < -pitch_max) pitch = -pitch_max;
 				this.rotateH = makeRotationMatrixY(yaw);
 				this.rotateV = makeRotationMatrixX(pitch);
 				this.drawRequests.clear();
@@ -322,9 +338,9 @@ public final class SwingRenderer implements Renderer {
 						//add the difference of e.x and lastX to the yaw value
 						//and remake the rotation matrix
 						double sensitvity = 0.5;
-						SwingRenderer.this.yaw += toRadians(e.getX() - lastX) * sensitvity;
+						SwingRenderer.this.yaw += toRadians(e.getX() - lastX) * sensitvity; //yaw adjustment
 						lastX = e.getX();
-						SwingRenderer.this.pitch += toRadians(e.getY() - lastY) * sensitvity;
+						SwingRenderer.this.pitch += toRadians(e.getY() - lastY) * sensitvity; //pitch adjustment
 						lastY = e.getY();
 					}
 
@@ -345,6 +361,7 @@ public final class SwingRenderer implements Renderer {
 					}
 				}
 			);
+			addMouseWheelListener((e)->{});
 		}
 		
 		/**
@@ -493,9 +510,8 @@ public final class SwingRenderer implements Renderer {
 				Matrix4 rotX = SwingRenderer.this.rotateH;
 				Matrix4 rotY = SwingRenderer.this.rotateV;
 				Matrix4 roll = SwingRenderer.this.rotateR;
-				double offset = -((double)(dimension-1)/2.0);// translate point so board rotates around its centre rather than 0,0,0
+				double offset = -(((double)(dimension)-0.5)/2.0);// translate point so board rotates around its centre rather than 0,0,0
 				Coord3D shift = new Coord3D(offset, 0 ,offset);
-				//this.rotated = multiply(multiply(location, rotX), rotY);
 				//this.rotated = multiply(multiply(multiply(location, rotX), rotY), roll);
 				this.rotated = multiply(multiply(multiply(add(location, shift), rotX), rotY), roll);
 			}
