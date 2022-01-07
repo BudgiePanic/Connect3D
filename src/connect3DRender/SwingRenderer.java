@@ -116,7 +116,7 @@ public final class SwingRenderer implements Renderer {
 	SwingRenderer(int dimension){
 		assert dimension >= 4;
 		this.dimension = dimension;
-		this.pitch_max = toRadians(45.0);
+		this.pitch_max = toRadians(90.0);
 	}
 
 	@Override
