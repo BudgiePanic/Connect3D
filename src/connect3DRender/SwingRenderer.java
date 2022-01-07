@@ -12,12 +12,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import javax.swing.*;
-import javax.swing.event.*;
-
 import connect3DCore.Piece;
-import connect3DUtil.Coord;
 import connect3DUtil.MathUtil.Coord3D;
 import static connect3DUtil.MathUtil.*;
 
@@ -57,11 +53,11 @@ public final class SwingRenderer implements Renderer {
 	/**
 	 * The width of the window in pixels.
 	 */
-	private static final int WIDTH = 640;
+	private static final int WIDTH = 1280;
 	/**
 	 * The height of the window in pixels.
 	 */
-	private static final int HEIGHT = 480;
+	private static final int HEIGHT = 720;
 	
 	//message passing variables. These variables are passed to observers on notifyObservers()
 	private volatile int x,y,z;
@@ -96,11 +92,20 @@ public final class SwingRenderer implements Renderer {
 	 * The 'up/down' angle the user has specified
 	 */
 	private volatile double pitch;
+	
 	/**
 	 * The 'left/right' angle the user has specified.
 	 */
 	private volatile double yaw;
 	
+	/**
+	 * The maximum pitch value
+	 */
+	private final double pitch_max;
+	
+	//physics based rotation fields
+	//private volatile double v_pitch, v_yaw, a_pitch, a_yaw;
+	//private volatile long elapsed;
 	
 	/**
 	 * Package private constructor so only the Render Factory can instantiate it.
@@ -111,6 +116,7 @@ public final class SwingRenderer implements Renderer {
 	SwingRenderer(int dimension){
 		assert dimension >= 4;
 		this.dimension = dimension;
+		this.pitch_max = toRadians(90.0);
 	}
 
 	@Override
@@ -128,8 +134,7 @@ public final class SwingRenderer implements Renderer {
 				Coord3D screen = toScreenSpace(getProjected(), WIDTH, HEIGHT);
 				int a = (int)screen.x;
 				int b = HEIGHT - (int)screen.y;
-				int size = 30 - (5 * (int)getRotated().z);
-				//System.out.println("Sphere at: ["+this.location+"] rotated to: ["+this.getRotated()+"]"+" has proj: ["+this.getProjected()+"]");
+				int size = 30 - (5 * (int)getRotated().z); //TODO could use dynamic ball sizing
 				Color old = g.getColor();
 				g.setColor(Color.BLACK);
 				g.fillOval(a-1,b-1,size+2,size+2);
@@ -175,6 +180,12 @@ public final class SwingRenderer implements Renderer {
 		this.rotateH = makeRotationMatrixY(pitch);
 		this.rotateV = makeRotationMatrixX(yaw);
 		this.rotateR = makeRotationMatrixZ(0.0); // don't 'roll' the points.
+		/*
+		this.v_pitch = 0.0;
+		this.v_pitch = 0.0;
+		this.a_pitch = 0.0;
+		this.a_yaw = 0.0;
+		*/
 		try {
 			SwingUtilities.invokeAndWait(() -> {
 				window = new JFrame("Connect3D");
@@ -185,6 +196,9 @@ public final class SwingRenderer implements Renderer {
 				window.validate();
 				window.pack();
 				window.setVisible(true);
+				/*
+				this.elapsed = System.currentTimeMillis();
+				*/
 			});
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();
@@ -192,7 +206,7 @@ public final class SwingRenderer implements Renderer {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 			throw new InitializationException();
-		} //end of SU.invL8R
+		}
 	}
 
 	@Override
@@ -211,16 +225,29 @@ public final class SwingRenderer implements Renderer {
 	public void redraw() throws IllegalStateException {
 		try {
 			SwingUtilities.invokeAndWait(() -> {
+				/*//physics based scene rotation
+				double timeSince = (double)(System.currentTimeMillis() - elapsed)/1000.0;
+				elapsed = System.currentTimeMillis();
+				pitch += v_pitch * timeSince;
+				v_pitch += a_pitch * timeSince;
+				a_pitch = -(0.5 * v_pitch);
+				
+				yaw += v_yaw * timeSince;
+				v_yaw += a_yaw * timeSince;
+				a_yaw = -(0.5 * v_yaw);
+				
+				if(v_pitch > -0.01 && v_pitch < 0.01) v_pitch = 0.0;
+				if(v_yaw > -0.01 && v_yaw < 0.01) v_yaw = 0.0;
+				*/
+				if(pitch > pitch_max) pitch = pitch_max;
+				if(pitch < -pitch_max) pitch = -pitch_max;
 				this.rotateH = makeRotationMatrixY(yaw);
 				this.rotateV = makeRotationMatrixX(pitch);
 				this.drawRequests.clear();
 				for(Component c : drawables) {
 					c.draw(this); //collect draw requests from the scene
 				}
-				//sort the draw Requests, furtherest away first.
 				Collections.sort(this.drawRequests);
-				//Collections.reverse(this.drawRequests);
-				//window.revalidate();
 				window.repaint(); //window itself will traverse the list and draw the objects
 			}
 			);
@@ -269,7 +296,10 @@ public final class SwingRenderer implements Renderer {
 		 * The last vertical pixel the mouse was on during a drag;
 		 */
 		private volatile int lastY = 0;
-		
+		/**
+		 * Field to keep track of mouse drag events. Always skip the first drag even in a drag sequence.
+		 */
+		private volatile boolean skipPress;
 		/**
 		 * Create a new panel.
 		 * Comes initialized with a mouse listener that reports user events.
@@ -281,6 +311,7 @@ public final class SwingRenderer implements Renderer {
 			spaceY = (SwingRenderer.HEIGHT / (dimension + paddingColumns));
 			assert spaceX != 0;
 			assert spaceY != 0;
+			skipPress = false;
 		}
 		
 		/**
@@ -295,8 +326,6 @@ public final class SwingRenderer implements Renderer {
 				{
 					@Override
 					public void mouseClicked(MouseEvent e) {
-						//System.out.println(e.getX()+" "+e.getY());
-						//System.out.println(toBoardSpaceX(e.getX())+" "+toBoardSpaceY(e.getY())+"\n");
 						SwingRenderer.this.x = toBoardSpaceX(e.getX()) - 1;
 						SwingRenderer.this.z = toBoardSpaceY(e.getY()) - 1;
 						SwingRenderer.this.message = "place";
@@ -305,7 +334,7 @@ public final class SwingRenderer implements Renderer {
 					@Override
 					public void mousePressed(MouseEvent e) {}
 					@Override
-					public void mouseReleased(MouseEvent e) {}
+					public void mouseReleased(MouseEvent e) { skipPress = true; }
 					@Override
 					public void mouseEntered(MouseEvent e) {
 						cursorX = toBoardSpaceX(e.getX());
@@ -319,13 +348,17 @@ public final class SwingRenderer implements Renderer {
 				{
 					@Override
 					public void mouseDragged(MouseEvent e) {
-						//add the difference of e.x and lastX to the yaw value
-						//and remake the rotation matrix
 						double sensitvity = 0.5;
-						SwingRenderer.this.yaw += toRadians(e.getX() - lastX) * sensitvity;
+						if(!skipPress) {
+							SwingRenderer.this.yaw += toRadians(e.getX() - lastX) * sensitvity; //direct yaw adjustment
+							SwingRenderer.this.pitch += toRadians(e.getY() - lastY) * sensitvity; //direct pitch adjustment
+//							SwingRenderer.this.v_yaw   = sensitvity * (double)(lastX - e.getX()); //physics based adjustment
+//							SwingRenderer.this.v_pitch = sensitvity * (double)(lastY - e.getY()); //physics based adjustment
+							
+						}
 						lastX = e.getX();
-						SwingRenderer.this.pitch += toRadians(e.getY() - lastY) * sensitvity;
 						lastY = e.getY();
+						skipPress = false;
 					}
 
 					@Override
@@ -345,6 +378,8 @@ public final class SwingRenderer implements Renderer {
 					}
 				}
 			);
+			addMouseWheelListener((e)->{});
+			//if(e.getWheelRotation > 0) then user scrolled down
 		}
 		
 		/**
@@ -380,13 +415,10 @@ public final class SwingRenderer implements Renderer {
 			super.paintComponent(g);
 			paintInputLayerH(g, dimension+1);
 			paintInputLayerV(g, dimension+1);
-			//g.drawString("message",5,25);
 			//the draw requests should already be sorted
 			for(Draw d : SwingRenderer.this.drawRequests) {
 				d.draw(g);
 			}
-			
-			//g.fillOval(50, 50, 50, 50);
 		}
 		
 		/**
@@ -435,11 +467,25 @@ public final class SwingRenderer implements Renderer {
 	 *
 	 */
 	private abstract class Draw implements Comparable<Draw> {
-		
+		/**
+		 * Boolean to distinguish draw calls that have a depth value and those that don't.
+		 */
 		public final boolean inWorld;
+		/**
+		 * The location of this draw call in Normalized Device Coordinate space.
+		 */
 		private Coord3D projected = null;
+		/**
+		 * The location of this draw call after it has been translated and rotated to be in front of the virtual camera.
+		 */
 		private Coord3D rotated = null;
+		/**
+		 * The location of this draw call in world space.
+		 */
 		public final Coord3D location;
+		/**
+		 * The color of this draw call.
+		 */
 		protected final Piece color;
 		
 		/**
@@ -493,8 +539,10 @@ public final class SwingRenderer implements Renderer {
 				Matrix4 rotX = SwingRenderer.this.rotateH;
 				Matrix4 rotY = SwingRenderer.this.rotateV;
 				Matrix4 roll = SwingRenderer.this.rotateR;
-				//this.rotated = multiply(multiply(location, rotX), rotY);
-				this.rotated = multiply(multiply(multiply(location, rotX), rotY), roll);
+				// translate point so board rotates around its centre rather than 0,0,0
+				double offset = -(((double)(dimension)-0.5)/2.0);
+				Coord3D shift = new Coord3D(offset, 0 ,offset);
+				this.rotated = multiply(multiply(multiply(add(location, shift), rotX), rotY), roll);
 			}
 			return this.rotated;
 		}
@@ -502,7 +550,7 @@ public final class SwingRenderer implements Renderer {
 		/**
 		 * Execute this draw request.
 		 * @param g
-		 * The SwingRenderer's grahics context
+		 * The SwingRenderer's graphics context
 		 */
 		abstract void draw(Graphics g);
 	}
