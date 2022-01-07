@@ -362,6 +362,7 @@ public final class SwingRenderer implements Renderer {
 				}
 			);
 			addMouseWheelListener((e)->{});
+			//if(e.getWheelRotation > 0) then user scrolled down
 		}
 		
 		/**
