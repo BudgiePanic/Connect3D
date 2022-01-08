@@ -134,7 +134,8 @@ public final class SwingRenderer implements Renderer {
 				Coord3D screen = toScreenSpace(getProjected(), WIDTH, HEIGHT);
 				int a = (int)screen.x;
 				int b = HEIGHT - (int)screen.y;
-				int size = 30 - (5 * (int)getRotated().z); //TODO could use dynamic ball sizing
+				int size = (int) (4000.0 * (1.0 - getProjected().z));
+				System.out.println(size);
 				Color old = g.getColor();
 				g.setColor(Color.BLACK);
 				g.fillOval(a-1,b-1,size+2,size+2);
@@ -174,7 +175,7 @@ public final class SwingRenderer implements Renderer {
 	@Override
 	public void initialize() throws InitializationException {
 		double aspect = (double) HEIGHT / (double) WIDTH;
-		this.projection = createProjectionM(0.1, 100.0, 70.0, aspect);
+		this.projection = createProjectionM(0.1, 50.0, 70.0, aspect);
 		this.pitch = 0.0;
 		this.yaw = 0.0;
 		this.rotateH = makeRotationMatrixY(pitch);
