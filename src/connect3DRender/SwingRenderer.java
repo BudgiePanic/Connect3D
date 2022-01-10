@@ -536,7 +536,7 @@ public final class SwingRenderer implements Renderer {
 			if(this.projected == null) {
 				Matrix4 proj = SwingRenderer.this.projection;
 				//rotate the point then translate it away from 0,0,0 origin
-				Coord3D ndc = multiply(add(getRotated(),new Coord3D(0,0, 8)), proj);
+				Coord3D ndc = multiply(add(getRotated(),new Coord3D(0,0, 6+(dimension/2))), proj);
 				projected = ndc; 
 			}
 			return projected;
