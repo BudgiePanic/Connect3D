@@ -303,10 +303,7 @@ public final class SwingRenderer implements Renderer {
 		 * The last vertical pixel the mouse was on during a drag;
 		 */
 		private volatile int lastY = 0;
-		/**
-		 * Field to keep track of mouse drag events. Always skip the first drag even in a drag sequence.
-		 */
-		private volatile boolean skipPress;
+		
 		/**
 		 * Create a new panel.
 		 * Comes initialized with a mouse listener that reports user events.
@@ -318,7 +315,6 @@ public final class SwingRenderer implements Renderer {
 			spaceY = (SwingRenderer.HEIGHT / (dimension + paddingColumns));
 			assert spaceX != 0;
 			assert spaceY != 0;
-			skipPress = false;
 		}
 		
 		/**
@@ -339,9 +335,9 @@ public final class SwingRenderer implements Renderer {
 						SwingRenderer.this.notifyObservers();
 					}
 					@Override
-					public void mousePressed(MouseEvent e) {}
+					public void mousePressed(MouseEvent e) { lastX = e.getX(); lastY = e.getY(); }
 					@Override
-					public void mouseReleased(MouseEvent e) { skipPress = true; }
+					public void mouseReleased(MouseEvent e) {}
 					@Override
 					public void mouseEntered(MouseEvent e) {
 						cursorX = toBoardSpaceX(e.getX());
@@ -356,16 +352,12 @@ public final class SwingRenderer implements Renderer {
 					@Override
 					public void mouseDragged(MouseEvent e) {
 						double sensitvity = 0.5;
-						if(!skipPress) {
-							SwingRenderer.this.yaw += toRadians(e.getX() - lastX) * sensitvity; //direct yaw adjustment
-							SwingRenderer.this.pitch += toRadians(e.getY() - lastY) * sensitvity; //direct pitch adjustment
-//							SwingRenderer.this.v_yaw   = sensitvity * (double)(lastX - e.getX()); //physics based adjustment
-//							SwingRenderer.this.v_pitch = sensitvity * (double)(lastY - e.getY()); //physics based adjustment
-							
-						}
+						SwingRenderer.this.yaw += toRadians(e.getX() - lastX) * sensitvity; //direct yaw adjustment
+						SwingRenderer.this.pitch += toRadians(e.getY() - lastY) * sensitvity; //direct pitch adjustment
+//						SwingRenderer.this.v_yaw   = sensitvity * (double)(lastX - e.getX()); //physics based adjustment
+//						SwingRenderer.this.v_pitch = sensitvity * (double)(lastY - e.getY()); //physics based adjustment	
 						lastX = e.getX();
 						lastY = e.getY();
-						skipPress = false;
 					}
 
 					@Override
