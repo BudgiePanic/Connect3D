@@ -107,6 +107,8 @@ public final class SwingRenderer implements Renderer {
 	//private volatile double v_pitch, v_yaw, a_pitch, a_yaw;
 	//private volatile long elapsed;
 	
+	private volatile double fov;
+	
 	/**
 	 * Package private constructor so only the Render Factory can instantiate it.
 	 * @param dimension
@@ -135,7 +137,7 @@ public final class SwingRenderer implements Renderer {
 				int a = (int)screen.x;
 				int b = HEIGHT - (int)screen.y;
 				int size = (int) (4000.0 * (1.0 - getProjected().z));
-				System.out.println(size);
+				//System.out.println("size:"+size+" Z:"+getProjected().z);
 				Color old = g.getColor();
 				g.setColor(Color.BLACK);
 				g.fillOval(a-1,b-1,size+2,size+2);
@@ -178,6 +180,7 @@ public final class SwingRenderer implements Renderer {
 		this.projection = createProjectionM(0.1, 50.0, 70.0, aspect);
 		this.pitch = 0.0;
 		this.yaw = 0.0;
+		this.fov = 70.0;
 		this.rotateH = makeRotationMatrixY(pitch);
 		this.rotateV = makeRotationMatrixX(yaw);
 		this.rotateR = makeRotationMatrixZ(0.0); // don't 'roll' the points.
@@ -242,6 +245,9 @@ public final class SwingRenderer implements Renderer {
 				*/
 				if(pitch > pitch_max) pitch = pitch_max;
 				if(pitch < -pitch_max) pitch = -pitch_max;
+				
+				this.projection = createProjectionM(0.1, 50.0, fov, (double) HEIGHT / (double) WIDTH);
+				
 				this.rotateH = makeRotationMatrixY(yaw);
 				this.rotateV = makeRotationMatrixX(pitch);
 				this.drawRequests.clear();
@@ -379,7 +385,13 @@ public final class SwingRenderer implements Renderer {
 					}
 				}
 			);
-			addMouseWheelListener((e)->{});
+			addMouseWheelListener((e)->{
+				if(e.getWheelRotation() > 0) ++fov;
+				if(e.getWheelRotation() < 0) --fov;
+				if(fov > 90) fov = 90;
+				if(fov < 10) fov = 10;
+				//System.out.println("fov:"+fov);
+			});
 			//if(e.getWheelRotation > 0) then user scrolled down
 		}
 		
@@ -524,7 +536,7 @@ public final class SwingRenderer implements Renderer {
 			if(this.projected == null) {
 				Matrix4 proj = SwingRenderer.this.projection;
 				//rotate the point then translate it away from 0,0,0 origin
-				Coord3D ndc = multiply(add(getRotated(),new Coord3D(0,0, 8)), proj);
+				Coord3D ndc = multiply(add(getRotated(),new Coord3D(0,0, 6+(dimension/2))), proj);
 				projected = ndc; 
 			}
 			return projected;

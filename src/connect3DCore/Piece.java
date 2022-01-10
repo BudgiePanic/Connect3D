@@ -8,19 +8,12 @@ import java.awt.Color;
  *
  */
 public enum Piece {
-	GREEN {
+	RED {
 		@Override
-		public char charRep() { return 'G'; }
+		public char charRep() { return 'R'; }
 
 		@Override
-		public Color color() { return Color.GREEN; }
-	},
-	WHITE {
-		@Override
-		public char charRep() { return 'W'; }
-
-		@Override
-		public Color color() { return Color.WHITE; }
+		public Color color() { return Color.RED; }
 	},
 	BLUE {
 		@Override
@@ -28,13 +21,20 @@ public enum Piece {
 
 		@Override
 		public Color color() { return Color.BLUE; }
-	},
-	RED {
+	},	
+	GREEN {
 		@Override
-		public char charRep() { return 'R'; }
+		public char charRep() { return 'G'; }
 
 		@Override
-		public Color color() { return Color.RED; }
+		public Color color() { return Color.GREEN; }
+	},
+	YELLOW {
+		@Override
+		public char charRep() { return 'Y'; }
+
+		@Override
+		public Color color() { return Color.YELLOW; }
 	},
 	ORANGE {
 		@Override
@@ -49,13 +49,13 @@ public enum Piece {
 
 		@Override
 		public Color color() { return new Color(103, 58, 183); }
-	},
-	YELLOW {
+	},	
+	WHITE {
 		@Override
-		public char charRep() { return 'Y'; }
+		public char charRep() { return 'W'; }
 
 		@Override
-		public Color color() { return Color.YELLOW; }
+		public Color color() { return Color.WHITE; }
 	},
 	EMPTY {
 		@Override
