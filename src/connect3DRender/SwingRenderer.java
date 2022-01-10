@@ -510,7 +510,10 @@ public final class SwingRenderer implements Renderer {
 		
 		@Override
 		public int compareTo(Draw o) {
-			if(!inWorld || !o.inWorld) return 0;
+			
+			if(!inWorld && !o.inWorld) return 0;
+			if(inWorld && !o.inWorld) return -1;
+			if(!inWorld && o.inWorld) return 1;
 			Coord3D me = getRotated();
 			Coord3D other = o.getRotated();
 			if(me.z > other.z) return -1;
