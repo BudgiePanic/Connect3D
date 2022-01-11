@@ -329,10 +329,12 @@ public final class SwingRenderer implements Renderer {
 				{
 					@Override
 					public void mouseClicked(MouseEvent e) {
-						SwingRenderer.this.x = toBoardSpaceX(e.getX()) - 1;
-						SwingRenderer.this.z = toBoardSpaceY(e.getY()) - 1;
-						SwingRenderer.this.message = "place";
-						SwingRenderer.this.notifyObservers();
+						if(e.getButton() == MouseEvent.BUTTON1) {
+							SwingRenderer.this.x = toBoardSpaceX(e.getX()) - 1;
+							SwingRenderer.this.z = toBoardSpaceY(e.getY()) - 1;
+							SwingRenderer.this.message = "place";
+							SwingRenderer.this.notifyObservers();
+						}
 					}
 					@Override
 					public void mousePressed(MouseEvent e) { lastX = e.getX(); lastY = e.getY(); }
