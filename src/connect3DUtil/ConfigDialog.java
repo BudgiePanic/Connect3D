@@ -43,7 +43,7 @@ public final class ConfigDialog extends JDialog {
 	/**
 	 * A combo box that allows the player to select between the size of the board.
 	 */
-	private JComboBox<Integer> boardSize = new JComboBox<Integer>(new Integer[] {4,6,8}) {{
+	private JComboBox<Integer> boardSize = new JComboBox<Integer>(new Integer[] {4, 5, 6, 7, 8}) {{
 		addItemListener(e->{
 			main.boardSize = (Integer)e.getItem();
 		});
