@@ -23,6 +23,7 @@ public final class RenderFactory {
 		//currently only supports the text renderer
 		if(type.toLowerCase().equals("text")) return new TextRenderer(boardDimension);
 		if(type.toLowerCase().equals("software")) return new SwingRenderer(boardDimension);
+		if(type.toLowerCase().equals("hardware")) return new HardwareRenderer();
 		throw new IllegalArgumentException("Unknown renderer type! ->"+type);
 	}
 }
