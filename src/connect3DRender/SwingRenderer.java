@@ -268,6 +268,12 @@ public final class SwingRenderer implements Renderer {
 
 	@Override
 	public boolean removeComponent(Component c) { return this.drawables.remove(c); }
+	
+	@Override
+	public boolean isActive() {
+		return true; //just return true because we're already using System exit on window close...
+		//TODO add a window listener to set a active field.
+	}
 
 	/**
 	 * Panel that performs IO for the swing renderer.
