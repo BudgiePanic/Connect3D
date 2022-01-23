@@ -71,7 +71,7 @@ public final class HardwareRenderer implements Renderer {
 	public void removeObserver(Observer o) { this.observers.remove(o); }
 
 	@Override
-	public void setActiveColor(Piece p) {}
+	public void setActiveColor(Piece p) {} //TODO
 
 	@Override
 	public void notifyObservers() {
@@ -96,7 +96,10 @@ public final class HardwareRenderer implements Renderer {
 		glfwShowWindow(a_window);
 		
 		GL.createCapabilities();
-		glClearColor(15.0f, 100.0f, 82.0f, 255.0f);
+		
+		glfwSetFramebufferSizeCallback(a_window, (window, width, height)->{
+			this.WIDTH = width; this.HEIGHT = height;
+		});
 		
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
@@ -121,25 +124,37 @@ public final class HardwareRenderer implements Renderer {
 	public void pollEvents() throws IllegalStateException {
 		System.out.println("events polled");
 		glfwPollEvents();
+		if(isKeyPressed(GLFW_KEY_Q)) red += 0.01;
+		if(isKeyPressed(GLFW_KEY_W)) green += 0.01;
+		if(isKeyPressed(GLFW_KEY_E)) blue += 0.01;
 	}
-
+	float red = 0.0f;
+	float green = 0.0f;
+	float blue = 0.0f;
 	@Override
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(red, green, blue, 1.0f);
 		glfwSwapBuffers(a_window);
 		System.out.println("redrawn");
 	}
 	
 	@Override
-	public void drawCylinderAt(int x, int y, int z, float radius, float height) {}
+	public void drawCylinderAt(int x, int y, int z, float radius, float height) {} //TODO
 
 	@Override
-	public void drawCubeAt(int x, int y, int z, float width, float height) {}
+	public void drawCubeAt(int x, int y, int z, float width, float height) {} //TODO
 
 	@Override
-	public void drawSphereAt(int x, int y, int z, float radius) {}
+	public void drawSphereAt(int x, int y, int z, float radius) {} //TODO
 
 	@Override
-	public void drawMessage(String msg) {}
+	public void drawMessage(String msg) {} //TODO
+	
+	//==============================================
+	
+	private boolean isKeyPressed(int key) {
+		return glfwGetKey(a_window, key) == GLFW_PRESS;
+	}
 
 }
