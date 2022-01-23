@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import connect3DCore.Piece;
+import connect3DResources.FileLoader;
 
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -13,6 +14,7 @@ import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.opengl.GL20.*;
 
 /**
  * Hardware renderer uses the capabilities of LWJGL to display the game via OpenGL.
@@ -58,6 +60,11 @@ public final class HardwareRenderer implements Renderer {
 	 */
 	private boolean initialized = false;
 	
+	/**
+	 * The shader program this renderer is using.
+	 */
+	private ShaderProgram shaderProgram;
+	
 	@Override
 	public void addComponent(Component c) { this.drawables.add(c); }
 
@@ -101,6 +108,32 @@ public final class HardwareRenderer implements Renderer {
 			this.WIDTH = width; this.HEIGHT = height;
 		});
 		
+		//Create shader program!
+		String vertexSource;
+		String fragmentSource;
+		try {
+			vertexSource = FileLoader.read("/connect3DResources/vertex.vs");
+			fragmentSource = FileLoader.read("/connect3DResources/fragment.fs");
+		} catch (Exception e) {
+			throw new InitializationException(e.getMessage());
+		}
+		//TODO TEMP
+		System.out.println("vertex source:\n"+vertexSource);
+		System.out.println("fragment source:\n"+fragmentSource);
+		boolean exit = true;
+		if(exit)throw new InitializationException("Temporary program exit!");
+		//TODO END OF TEMP
+		
+		try {
+			this.shaderProgram = new ShaderProgram();
+			this.shaderProgram.createVertexShader(vertexSource);
+			this.shaderProgram.createFragmentShader(fragmentSource);
+			this.shaderProgram.link();
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new InitializationException(e.getMessage());
+		}
+		
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
 	}
@@ -109,6 +142,7 @@ public final class HardwareRenderer implements Renderer {
 	public void destroy() {
 		glfwFreeCallbacks(a_window);
 		glfwDestroyWindow(a_window);
+		if(shaderProgram != null) shaderProgram.delete();
 		glfwTerminate();
 		glfwSetErrorCallback(null).free();
 		System.out.println("destroyed HW renderer");
@@ -156,5 +190,105 @@ public final class HardwareRenderer implements Renderer {
 	private boolean isKeyPressed(int key) {
 		return glfwGetKey(a_window, key) == GLFW_PRESS;
 	}
+	
+	//==============================================
 
+}
+
+/**
+ * The shader program class encapsulates shader related code.
+ * @author Benjamin
+ *
+ */
+class ShaderProgram {
+	
+	private final int programID;
+	
+	private int vertexShaderID;
+	
+	private int fragmentShaderID;
+	
+	ShaderProgram() throws Exception {
+		programID = glCreateProgram();
+		if(programID == 0) throw new Exception("Shader creation failed!");
+	}
+	
+	/**
+	 * 
+	 * @param source
+	 *  The source code of the vertex shader
+	 * @throws Exception
+	 */
+	void createVertexShader(String source) throws Exception {
+		vertexShaderID = createShader(source, GL_VERTEX_SHADER);
+	}
+	
+	/**
+	 * 
+	 * @param source
+	 *  The source code of the fragment shader
+	 * @throws Exception
+	 */
+	void createFragmentShader(String source) throws Exception {
+		fragmentShaderID = createShader(source, GL_FRAGMENT_SHADER);
+	}
+	/**
+	 * Creates a shader, compiles it, and attaches it to the GL program.
+	 * @param source
+	 * @param type
+	 * @return
+	 *  The ID of the shader program.
+	 * @throws Exception
+	 */
+	private int createShader(String source, int type) throws Exception {
+		int shaderID = glCreateShader(type);
+		if(shaderID == 0) throw new Exception("Failed to create shader! >>"+type);
+		glShaderSource(shaderID, source);
+		
+		glCompileShader(shaderID);
+		
+		if(glGetShaderi(shaderID, GL_COMPILE_STATUS) == 0) {
+			throw new Exception("Shader compilation failed! >>"+glGetShaderInfoLog(shaderID,1024));
+		}
+		
+		glAttachShader(programID, shaderID);
+		return shaderID;
+	}
+	/**
+	 * Attempts to link the GL program.
+	 * Checks for errors.
+	 * @throws Exception
+	 */
+	void link() throws Exception {
+		glLinkProgram(programID);
+		if(glGetProgrami(programID, GL_LINK_STATUS) == 0){
+			throw new Exception("GL program linking failed! >>"+glGetProgramInfoLog(programID, 1024));
+		}
+		//detatch shaders, they are not needed after linking is completed
+		if(vertexShaderID != 0) {
+			glDetachShader(programID, vertexShaderID);
+		}
+		
+		if(fragmentShaderID != 0) {
+			glDetachShader(programID, fragmentShaderID);
+		}
+		
+		glValidateProgram(programID);
+		if(glGetProgrami(programID, GL_VALIDATE_STATUS) == 0) {
+			System.err.println("Warning! Shader program linking >>"+glGetProgramInfoLog(programID,1024));
+		}
+	}
+	
+	void bind() {
+		glUseProgram(programID);
+	}
+	
+	void unbind() {
+		glUseProgram(0);
+	}
+	
+	void delete() {
+		unbind();
+		if(programID != 0) glDeleteProgram(programID);
+	}
 }
