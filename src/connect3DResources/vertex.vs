@@ -6,6 +6,7 @@ layout (location=1) in vec3 color;
 out vec3 exColor;
 
 uniform mat4 projectionMatrix;
+uniform mat4 worldMatrix;
 
 void main()
 {
