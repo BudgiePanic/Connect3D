@@ -3,14 +3,19 @@ package connect3DRender;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
+import connect3DUtil.MathUtil;
 
+import org.joml.Matrix4f;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import static org.lwjgl.glfw.Callbacks.*;
@@ -75,6 +80,11 @@ public final class HardwareRenderer implements Renderer {
 	 */
 	private Mesh mesh;
 	
+	/**
+	 * Projection matrix to go from camera space to screen space.
+	 */
+	private Matrix4f projection;
+	
 	
 	@Override
 	public void addComponent(Component c) { this.drawables.add(c); }
@@ -117,6 +127,7 @@ public final class HardwareRenderer implements Renderer {
 		
 		glfwSetFramebufferSizeCallback(a_window, (window, width, height)->{
 			this.WIDTH = width; this.HEIGHT = height;
+			glViewport(0,0,width,height);
 		});
 		
 		//Create shader program!
@@ -134,23 +145,18 @@ public final class HardwareRenderer implements Renderer {
 			this.shaderProgram.createVertexShader(vertexSource);
 			this.shaderProgram.createFragmentShader(fragmentSource);
 			this.shaderProgram.link();
+			this.shaderProgram.createUniform("projectionMatrix");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InitializationException(e.getMessage());
 		}
 		
 		//create vertex data and send it to the GPU
-		float[] vertsTriangle = new float[] {
-			 0.0f,  0.5f, 0.0f,
-			-0.5f, -0.5f, 0.0f,
-			 0.5f, -0.5f, 0.0f
-		};
-		
 		float[] vertsQuad = new float[] {
-			-0.5f,  0.5f, 0f,  
-			-0.5f, -0.5f, 0f,
-			 0.5f, -0.5f, 0f,
-			 0.5f,  0.5f, 0f,
+			-0.5f,  0.5f, -5.0f,  
+			-0.5f, -0.5f, -5.0f,
+			 0.5f, -0.5f, -5.0f,
+			 0.5f,  0.5f, -5.0f,
 		};
 		
 		int[] indicesQuad = new int[] {
@@ -166,6 +172,11 @@ public final class HardwareRenderer implements Renderer {
 		};
 		
 		this.mesh = new Mesh(vertsQuad, color, indicesQuad);
+		
+		float fov = (float)MathUtil.toRadians(90.0);
+		float aspect = (float)WIDTH / (float)HEIGHT;
+		
+		projection = new Matrix4f().perspective(fov, aspect, 0.1f, 100.0f);
 		
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
@@ -204,7 +215,9 @@ public final class HardwareRenderer implements Renderer {
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+		//activate shader program and send uniform data
 		shaderProgram.bind();
+		shaderProgram.uploadMat4f("projectionMatrix", projection);
 		
 		//set
 		glBindVertexArray(this.mesh.vaoID);
@@ -259,6 +272,8 @@ class ShaderProgram {
 	private int vertexShaderID;
 	
 	private int fragmentShaderID;
+	
+	private final Map<String, Integer> uniforms = new HashMap<>();
 	
 	ShaderProgram() throws Exception {
 		programID = glCreateProgram();
@@ -342,6 +357,33 @@ class ShaderProgram {
 	void delete() {
 		unbind();
 		if(programID != 0) glDeleteProgram(programID);
+	}
+	
+	/**
+	 * Checks to see if the shader program has a uniform with uniformName.
+	 * Adds uniformLocation to Map, if it exists.
+	 * @param uniformName
+	 * @throws Exception
+	 *  Thrown if the shader program does not have a uniform with uniformName.
+	 */
+	void createUniform(String uniformName) throws Exception {
+		int uniformLocation = glGetUniformLocation(programID, uniformName);
+		if(uniformLocation < 0) throw new Exception("Shader Program:"+programID+" Could not find uniform with name: "+uniformName);
+		uniforms.put(uniformName, uniformLocation);
+	}
+	
+	/**
+	 * Upload a matrix4f to the GPU via a uniform.
+	 * @param uniformName
+	 * @param data
+	 */
+	public void uploadMat4f(String uniformName, Matrix4f data) {
+		//Use auto managed external memory, the 'stack'.
+		try(MemoryStack stackFrame = MemoryStack.stackPush()){
+			FloatBuffer buffer = stackFrame.mallocFloat(4*4);
+			data.get(buffer); //transfer the data out of the Matrix4f and into the buffer
+			glUniformMatrix4fv(uniforms.get(uniformName), false, buffer); //upload the buffer to the GPU
+		}
 	}
 }
 
