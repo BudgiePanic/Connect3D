@@ -217,11 +217,17 @@ public final class HardwareRenderer implements Renderer {
 		if(isKeyPressed(GLFW_KEY_Q)) red += 0.01;
 		if(isKeyPressed(GLFW_KEY_W)) green += 0.01;
 		if(isKeyPressed(GLFW_KEY_E)) blue += 0.01;
+		if(isKeyPressed(GLFW_KEY_Z)) xPos += 0.01;
+		if(isKeyPressed(GLFW_KEY_X)) yaw += 1.0;
+		if(isKeyPressed(GLFW_KEY_C)) rotation += 1.0;
 		glClearColor(red, green, blue, 1.0f);
 	}
 	float red = 0.0f;
 	float green = 0.0f;
 	float blue = 0.0f;
+	float xPos = 0.0f;
+	float yaw = 0.0f;
+	float rotation = 0.0f;
 	@Override
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -232,14 +238,12 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
 		//draw each model
 		for(Model m : models) {
+			m.updatePosition(xPos, m.getPosition().y, m.getPosition().z);
+			m.updateRotation(m.getRotation().x, rotation, yaw);
 			transformManager.updateWorldMatrix(m.getPosition(), m.getRotation(), m.getScale());
 			shaderProgram.uploadMat4f("worldMatrix", transformManager.worldMatrix);
 			m.getMesh().draw();
 		} 
-		
-		//unset
-		glDisableVertexAttribArray(0);
-		glBindVertexArray(0);
 		shaderProgram.unbind();
 		
 		glfwSwapBuffers(a_window);
@@ -480,6 +484,10 @@ class Mesh {
 						GL_UNSIGNED_INT,//the type of data in the indices buffer
 						0				//offset in the indices data
 		);
+		//unset state
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		glBindVertexArray(0);
 	}
 
 	/**
