@@ -1,6 +1,7 @@
 package connect3DRender;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,13 +147,25 @@ public final class HardwareRenderer implements Renderer {
 		};
 		
 		float[] vertsQuad = new float[] {
-			//V1 -> V2 -> V4 AntiClock wise ordering
-			//V4 -> V2 -> V3
-			-0.5f,0.5f,0f,  -0.5f,-0.5f,0f,  0.5f,0.5f,0f,
-			0.5f,0.5f,0f,   -0.5f,-0.5f,0f,  0.5f,-0.5f,0f
+			-0.5f,  0.5f, 0f,  
+			-0.5f, -0.5f, 0f,
+			 0.5f, -0.5f, 0f,
+			 0.5f,  0.5f, 0f,
 		};
 		
-		this.mesh = new Mesh(vertsQuad);
+		int[] indicesQuad = new int[] {
+				0,1,3,  3,1,2
+		};
+		//the {r,g,b} at each vertex. GPU interpolates the color between the vertices.
+		//0.0f == no color && 1.0f == max color
+		float[] color = new float[] {
+				0.5f, 0.0f, 0.0f,
+				1.0f, 1.0f, 1.0f,
+				0.0f, 0.0f, 0.5f,
+				0.0f, 0.5f, 0.5f
+		};
+		
+		this.mesh = new Mesh(vertsQuad, color, indicesQuad);
 		
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
@@ -196,7 +209,12 @@ public final class HardwareRenderer implements Renderer {
 		//set
 		glBindVertexArray(this.mesh.vaoID);
 		glEnableVertexAttribArray(0);
-		glDrawArrays(GL_TRIANGLES,0,this.mesh.vertexCount);
+		glEnableVertexAttribArray(1);
+		glDrawElements( GL_TRIANGLES,			//rendering primitives being used
+						this.mesh.vertexCount,	//the number of elements to render
+						GL_UNSIGNED_INT,		//the type of data in the indices buffer
+						0						//offset in the indices data
+		);
 		
 		//unset
 		glDisableVertexAttribArray(0);
@@ -337,36 +355,65 @@ class Mesh {
 	
 	final int vboID;
 	
+	final int indicesVBOid;
+	
+	final int colorVBOid;
+	
 	final int vertexCount;
 	
 	/**
 	 * Uploads mesh data to the GPU
 	 * @param vertices
+	 * @param colors 
+	 * @param indices 
 	 */
-	Mesh(float[] vertices) {
+	Mesh(float[] vertices, float[] colors, int[] indices) {
 		FloatBuffer verticesBuffer = null;
+		FloatBuffer colorBuffer = null;
+		IntBuffer indicesBuffer = null;
 		try {
+			//load vert data into auxillary memory
 			verticesBuffer = memAllocFloat(vertices.length);
-			vertexCount = vertices.length / 3; //TODO this might break in the future
+			vertexCount = indices.length;
 			verticesBuffer.put(vertices).flip();
 			
+			//create vertex array object
 			vaoID = glGenVertexArrays();
 			glBindVertexArray(vaoID);
 			
+			//create vertex index buffer and upload data to GPU
+			indicesVBOid = glGenBuffers();
+			indicesBuffer = MemoryUtil.memAllocInt(vertexCount);
+			indicesBuffer.put(indices).flip();
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVBOid);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
+			
+			//create vertex buffer object and upload vertex data to GPU
 			vboID = glGenBuffers();
 			glBindBuffer(GL_ARRAY_BUFFER, vboID);
 			glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW);
-			int index = 0; //location where the shader can find this data
+			int location = 0; //location where the shader can find this data
 			int size = 3; //the number of components per vertex attribute. 3 for 3D coordinate.
 			int type = GL_FLOAT; // the type of data that the array components are
 			boolean normalized = false; //should the data be normalized
 			int stride = 0; //the byte offset between consecutive vertex attributes
 			int offset = 0; // the distance to the first component in the buffer
-			glVertexAttribPointer(index, size, type, normalized, stride, offset);
+			glVertexAttribPointer(location, size, type, normalized, stride, offset);
+			
+			//color VBO
+			colorVBOid = glGenBuffers();
+			colorBuffer = MemoryUtil.memAllocFloat(colors.length);
+			colorBuffer.put(colors).flip();
+			glBindBuffer(GL_ARRAY_BUFFER, colorVBOid);
+			glBufferData(GL_ARRAY_BUFFER, colorBuffer, GL_STATIC_DRAW);
+			location = 1;
+			glVertexAttribPointer(location, size, type, normalized, stride, offset);
 			
 			glBindVertexArray(0);
 		} finally {
 			if(verticesBuffer != null) memFree(verticesBuffer);
+			if(indicesBuffer != null) memFree(indicesBuffer);
+			if(colorBuffer != null) memFree(colorBuffer);
 		}
 	}
 	
@@ -377,6 +424,8 @@ class Mesh {
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glDeleteBuffers(vboID);
+		glDeleteBuffers(indicesVBOid);
+		glDeleteBuffers(colorVBOid);
 		glBindVertexArray(0);
 		glDeleteVertexArrays(vaoID);
 	}
