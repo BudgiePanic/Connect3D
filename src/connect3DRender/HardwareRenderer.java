@@ -220,6 +220,8 @@ public final class HardwareRenderer implements Renderer {
 		if(isKeyPressed(GLFW_KEY_Z)) xPos += 0.01;
 		if(isKeyPressed(GLFW_KEY_X)) yaw += 1.0;
 		if(isKeyPressed(GLFW_KEY_C)) rotation += 1.0;
+		if(isKeyPressed(GLFW_KEY_V)) zPos -= 0.1f;
+		if(isKeyPressed(GLFW_KEY_B)) zPos += 0.1f;
 		glClearColor(red, green, blue, 1.0f);
 	}
 	float red = 0.0f;
@@ -228,6 +230,7 @@ public final class HardwareRenderer implements Renderer {
 	float xPos = 0.0f;
 	float yaw = 0.0f;
 	float rotation = 0.0f;
+	float zPos = 0.0f;
 	@Override
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -238,7 +241,7 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
 		//draw each model
 		for(Model m : models) {
-			m.updatePosition(xPos, m.getPosition().y, m.getPosition().z);
+			m.updatePosition(xPos, m.getPosition().y, zPos);
 			m.updateRotation(m.getRotation().x, rotation, yaw);
 			transformManager.updateWorldMatrix(m.getPosition(), m.getRotation(), m.getScale());
 			shaderProgram.uploadMat4f("worldMatrix", transformManager.worldMatrix);
