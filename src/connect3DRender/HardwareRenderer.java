@@ -10,8 +10,10 @@ import java.util.Map;
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
 import connect3DUtil.MathUtil;
+import connect3DUtil.TransformManager;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
@@ -55,6 +57,11 @@ public final class HardwareRenderer implements Renderer {
 	private long a_window; 
 	
 	/**
+	 * And object that encapsulates away the management of the world and projection martices.
+	 */
+	private final TransformManager transformManager = new TransformManager();
+	
+	/**
 	 * The width of the GLFW window in pixels
 	 */
 	private int WIDTH = 1280;
@@ -63,6 +70,11 @@ public final class HardwareRenderer implements Renderer {
 	 * The height of the GLFW window in pixels.
 	 */
 	private int HEIGHT = 720;
+	
+	/**
+	 * the field of view being used by the hardware renderer.
+	 */
+	private float fov = 90.0f;
 	
 	/**
 	 * remember if the renderer has been initialized.
@@ -81,9 +93,10 @@ public final class HardwareRenderer implements Renderer {
 	private Mesh mesh;
 	
 	/**
-	 * Projection matrix to go from camera space to screen space.
+	 * TODO TEMP
+	 * list of models that the renderer will paint each redraw.
 	 */
-	private Matrix4f projection;
+	private final List<Model> models = new ArrayList<>();
 	
 	
 	@Override
@@ -146,6 +159,7 @@ public final class HardwareRenderer implements Renderer {
 			this.shaderProgram.createFragmentShader(fragmentSource);
 			this.shaderProgram.link();
 			this.shaderProgram.createUniform("projectionMatrix");
+			this.shaderProgram.createUniform("worldMatrix");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InitializationException(e.getMessage());
@@ -172,11 +186,8 @@ public final class HardwareRenderer implements Renderer {
 		};
 		
 		this.mesh = new Mesh(vertsQuad, color, indicesQuad);
-		
-		float fov = (float)MathUtil.toRadians(90.0);
-		float aspect = (float)WIDTH / (float)HEIGHT;
-		
-		projection = new Matrix4f().perspective(fov, aspect, 0.1f, 100.0f);
+		Model mdl = new Model(mesh);
+		models.add(mdl);
 		
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
@@ -215,9 +226,10 @@ public final class HardwareRenderer implements Renderer {
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		//activate shader program and send uniform data
+		//activate shader program and update uniform data then send uniform data
 		shaderProgram.bind();
-		shaderProgram.uploadMat4f("projectionMatrix", projection);
+		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
+		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
 		
 		//set
 		glBindVertexArray(this.mesh.vaoID);
@@ -470,5 +482,106 @@ class Mesh {
 		glDeleteBuffers(colorVBOid);
 		glBindVertexArray(0);
 		glDeleteVertexArrays(vaoID);
+	}
+}
+
+/**
+ * A model is a Mesh combined with transformations that move it into world space when applied.
+ * The transformations are mutable objects.
+ * Multiple models can reuse the same mesh object.
+ * @author Benjamin
+ *
+ */
+class Model{
+	private final Mesh mesh;
+	private final Vector3f position;
+	private float scale;
+	private final Vector3f rotation;
+	
+	/**
+	 * Create a new model.
+	 * @param mesh
+	 *  The mesh that this model will use.
+	 */
+	Model(Mesh mesh){
+		this.mesh = mesh;
+		this.position = new Vector3f(0,0,0);
+		this.scale = 1.0f;
+		this.rotation = new Vector3f(0,0,0);
+	}
+	
+	/**
+	 * Return the position of this model in world space.
+	 * @return
+	 *  The mutable position object of this model. 
+	 */
+	Vector3f getPosition() {
+		return position;
+	}
+	
+	/**
+	 * Return the rotation values this model uses.
+	 * @return
+	 *  The mutable rotation object of this model.
+	 */
+	Vector3f getRotation() {
+		return rotation;
+	}
+	
+	/**
+	 * Return the scale value of this model.
+	 * @return
+	 *  The scale being applied to this model.
+	 */
+	float getScale() {
+		return scale;
+	}
+	
+	/**
+	 * Update the transform that moves this model from model space to world space.
+	 * @param x
+	 *  The distance to move in the X dimension.
+	 * @param y
+	 *  The distance to move in the Y dimension.
+	 * @param z
+	 *  The distance to move in the Z dimension.
+	 */
+	void updatePosition(float x, float y, float z) {
+		this.position.x = x;
+		this.position.y = y;
+		this.position.z = z;
+	}
+	
+	/**
+	 * Update the scale this model will use.
+	 * @param scale
+	 *  The new scale from model space to world space.
+	 */
+	void updateScale(float scale) {
+		this.scale = scale;
+	}
+	
+	/**
+	 * Update the rotation values this model will use.
+	 * @param pitch
+	 *  The rotation along the X axis IN DEGREES
+	 * @param roll
+	 *  The rotation along the Z axis IN DEGREES
+	 * @param yaw
+	 *  The rotation along the Y axis IN DEGREES
+	 */
+	void updateRotation(float pitch, float roll, float yaw) {
+		rotation.x = pitch;
+		rotation.y = yaw;
+		rotation.z = roll;
+	}
+	
+	/**
+	 * Get the mesh that this model is using.
+	 * @return
+	 *  The mesh that this model is using
+	 */
+	Mesh getMesh() {
+		return this.mesh;
 	}
 }
