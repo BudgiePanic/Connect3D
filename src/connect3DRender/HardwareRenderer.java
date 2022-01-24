@@ -167,10 +167,10 @@ public final class HardwareRenderer implements Renderer {
 		
 		//create vertex data and send it to the GPU
 		float[] vertsQuad = new float[] {
-			-0.5f,  0.5f, -5.0f,  
-			-0.5f, -0.5f, -5.0f,
-			 0.5f, -0.5f, -5.0f,
-			 0.5f,  0.5f, -5.0f,
+			-0.5f,  0.5f, 0.0f,  
+			-0.5f, -0.5f, 0.0f,
+			 0.5f, -0.5f, 0.0f,
+			 0.5f,  0.5f, 0.0f,
 		};
 		
 		int[] indicesQuad = new int[] {
