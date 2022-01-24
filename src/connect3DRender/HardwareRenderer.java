@@ -337,3 +337,58 @@ class ShaderProgram {
 		if(programID != 0) glDeleteProgram(programID);
 	}
 }
+
+/**
+ * Encapsulate VBO and VAO management
+ * @author Benjamin
+ *
+ */
+class Mesh {
+	final int vaoID;
+	
+	final int vboID;
+	
+	final int vertexCount;
+	
+	/**
+	 * Uploads mesh data to the GPU
+	 * @param vertices
+	 */
+	Mesh(float[] vertices) {
+		FloatBuffer verticesBuffer = null;
+		try {
+			verticesBuffer = memAllocFloat(vertices.length);
+			vertexCount = vertices.length / 3; //TODO this might break in the future
+			verticesBuffer.put(vertices).flip();
+			
+			vaoID = glGenVertexArrays();
+			glBindVertexArray(vaoID);
+			
+			vboID = glGenBuffers();
+			glBindBuffer(GL_ARRAY_BUFFER, vboID);
+			glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW);
+			int index = 0; //location where the shader can find this data
+			int size = 3; //the number of components per vertex attribute. 3 for 3D coordinate.
+			int type = GL_FLOAT; // the type of data that the array components are
+			boolean normalized = false; //should the data be normalized
+			int stride = 0; //the byte offset between consecutive vertex attributes
+			int offset = 0; // the distance to the first component in the buffer
+			glVertexAttribPointer(index, size, type, normalized, stride, offset);
+			
+			glBindVertexArray(0);
+		} finally {
+			if(verticesBuffer != null) memFree(verticesBuffer);
+		}
+	}
+	
+	/**
+	 * Cleans up the memory on the GPU that this object allocated
+	 */
+	public void delete() {
+		glDisableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDeleteBuffers(vboID);
+		glBindVertexArray(0);
+		glDeleteVertexArrays(vaoID);
+	}
+}
