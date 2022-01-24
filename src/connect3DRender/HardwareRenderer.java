@@ -68,8 +68,11 @@ public final class HardwareRenderer implements Renderer {
 	 */
 	private ShaderProgram shaderProgram;
 	
-	private int vboID;
-	private int vaoID;
+	/**
+	 * TODO TEMP
+	 * A mesh that the renderer will draw each redraw.
+	 */
+	private Mesh mesh;
 	
 	
 	@Override
@@ -136,32 +139,20 @@ public final class HardwareRenderer implements Renderer {
 		}
 		
 		//create vertex data and send it to the GPU
-		float[] verts = new float[] {
+		float[] vertsTriangle = new float[] {
 			 0.0f,  0.5f, 0.0f,
 			-0.5f, -0.5f, 0.0f,
 			 0.5f, -0.5f, 0.0f
 		};
-		FloatBuffer vertBuffer = MemoryUtil.memAllocFloat(verts.length);
-		vertBuffer.put(verts).flip();
 		
-		this.vaoID = glGenVertexArrays();
-		glBindVertexArray(vaoID);
-		this.vboID = glGenBuffers();
-		glBindBuffer(GL_ARRAY_BUFFER, this.vboID);
-		glBufferData(GL_ARRAY_BUFFER, vertBuffer, GL_STATIC_DRAW); //upload data to GPU
-		memFree(vertBuffer); 
+		float[] vertsQuad = new float[] {
+			//V1 -> V2 -> V4 AntiClock wise ordering
+			//V4 -> V2 -> V3
+			-0.5f,0.5f,0f,  -0.5f,-0.5f,0f,  0.5f,0.5f,0f,
+			0.5f,0.5f,0f,   -0.5f,-0.5f,0f,  0.5f,-0.5f,0f
+		};
 		
-		//Tell the GPU how to interpret the data we sent it.
-		int index = 0; //location where the shader can find this data
-		int size = 3; //the number of components per vertex attribute. 3 for 3D coordinate.
-		int type = GL_FLOAT; // the type of data that the array components are
-		boolean normalized = false; //should the data be normalized
-		int stride = 0; //the byte offset between consecutive vertex attributes
-		int offset = 0; // the distance to the first component in the buffer
-		glVertexAttribPointer(index, size, type, normalized, stride, offset);
-		//tidy up
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
+		this.mesh = new Mesh(vertsQuad);
 		
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
@@ -172,11 +163,7 @@ public final class HardwareRenderer implements Renderer {
 		glfwFreeCallbacks(a_window);
 		glfwDestroyWindow(a_window);
 		if(shaderProgram != null) shaderProgram.delete();
-		glDisableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDeleteBuffers(vboID);
-		glBindVertexArray(0);
-		glDeleteVertexArrays(vaoID);
+		if(mesh != null) mesh.delete();
 		glfwTerminate();
 		glfwSetErrorCallback(null).free();
 		System.out.println("destroyed HW renderer");
@@ -195,6 +182,7 @@ public final class HardwareRenderer implements Renderer {
 		if(isKeyPressed(GLFW_KEY_Q)) red += 0.01;
 		if(isKeyPressed(GLFW_KEY_W)) green += 0.01;
 		if(isKeyPressed(GLFW_KEY_E)) blue += 0.01;
+		glClearColor(red, green, blue, 1.0f);
 	}
 	float red = 0.0f;
 	float green = 0.0f;
@@ -204,16 +192,17 @@ public final class HardwareRenderer implements Renderer {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		shaderProgram.bind();
-		glBindVertexArray(vaoID);
+		
+		//set
+		glBindVertexArray(this.mesh.vaoID);
 		glEnableVertexAttribArray(0);
+		glDrawArrays(GL_TRIANGLES,0,this.mesh.vertexCount);
 		
-		glDrawArrays(GL_TRIANGLES,0,3);
-		
+		//unset
 		glDisableVertexAttribArray(0);
 		glBindVertexArray(0);
 		shaderProgram.unbind();
 		
-		glClearColor(red, green, blue, 1.0f);
 		glfwSwapBuffers(a_window);
 		System.out.println("redrawn");
 	}
