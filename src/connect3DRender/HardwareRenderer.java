@@ -226,20 +226,16 @@ public final class HardwareRenderer implements Renderer {
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		//activate shader program and update uniform data then send uniform data
+		//activate shader program and update projection matrix and send projection matrix to GPU
 		shaderProgram.bind();
 		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
 		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
-		
-		//set
-		glBindVertexArray(this.mesh.vaoID);
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glDrawElements( GL_TRIANGLES,			//rendering primitives being used
-						this.mesh.vertexCount,	//the number of elements to render
-						GL_UNSIGNED_INT,		//the type of data in the indices buffer
-						0						//offset in the indices data
-		);
+		//draw each model
+		for(Model m : models) {
+			transformManager.updateWorldMatrix(m.getPosition(), m.getRotation(), m.getScale());
+			shaderProgram.uploadMat4f("worldMatrix", transformManager.worldMatrix);
+			m.getMesh().draw();
+		} 
 		
 		//unset
 		glDisableVertexAttribArray(0);
@@ -470,7 +466,22 @@ class Mesh {
 			if(colorBuffer != null) memFree(colorBuffer);
 		}
 	}
-	
+
+	/**
+	 * Makes LWJGL calls to render this mesh
+	 */
+	public void draw() {
+		//set state
+		glBindVertexArray(vaoID);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glDrawElements( GL_TRIANGLES,	//rendering primitives being used
+						vertexCount,	//the number of elements to render
+						GL_UNSIGNED_INT,//the type of data in the indices buffer
+						0				//offset in the indices data
+		);
+	}
+
 	/**
 	 * Cleans up the memory on the GPU that this object allocated
 	 */
