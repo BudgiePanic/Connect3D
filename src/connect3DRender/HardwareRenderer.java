@@ -220,15 +220,15 @@ public final class HardwareRenderer implements Renderer {
 		//CCW vertex rotation on face
 		int[] indicesCube= new int[] {
 			0, 1, 3,   3, 1, 2, //front face triangles
-			4, 0, 3,   5, 4, 3,  //top face triangles
-			3, 2, 7,   5, 3, 7,  //right face
-			6, 1, 0,   6, 0, 4,  //left face
-			2, 1, 6,   2, 6, 7,  //bottom face
+			8, 10, 11,   9, 8, 11,  //top face triangles
+			12, 13, 7,   5, 12, 7,  //right face
+			14, 15, 6,   4, 14, 6,  //left face
+			16, 18, 19,   17, 16, 19,  //bottom face
 			7, 6, 4,   7, 4, 5   //back face
 		};
 		
 		float[] textureCoords = new float[] {
-			//vertex 0
+			//vertex 0 -- FRONT
 			0.0f, 0.0f,
 			//vertex 1
 			1.0f, 0.0f,
@@ -236,14 +236,38 @@ public final class HardwareRenderer implements Renderer {
 			1.0f, 1.0f,
 			//vertex 3
 			0.0f, 1.0f,
-			//vertex 4	
-			0.0f, 1.0f,
+			//vertex 4 -- BACK
+			0.0f, 0.0f,
 			//vertex 5
-			1.0f, 1.0f,
-			//vertex 6			
 			1.0f, 0.0f,
-			//vertex 7
-			1.0f, 0.0f
+			//vertex 6			
+			0.0f, 1.0f,
+			//vertex 7 -- end of standard vertices
+			1.0f, 1.0f,
+			//vertex 8 -- start of repeated vertices -- TOP -- 4
+			0.0f, 0.0f,
+			//vertex 9 -- 5
+			1.0f, 0.0f,
+			//vertex 10 -- 0
+			0.0f, 1.0f,
+			//vertex 11 -- 3
+			1.0f, 1.0f,
+			//vertex 12	-- RIGHT -- 3
+			0.0f, 0.0f,
+			//vertex 13 -- 2
+			0.0f, 1.0f,
+			//vertex 14 -- LEFT -- 0	
+			1.0f, 0.0f,
+			//vertex 15 -- 1
+			1.0f, 1.0f,
+			//vertex 16 -- BOTTOM -- 6
+			0.0f, 0.0f,
+			//vertex 17 -- 7
+			1.0f, 0.0f,
+			//vertex 18 -- 1
+			0.0f, 1.0f,
+			//vertex 19 -- 2
+			1.0f, 1.0f
 		};
 		
 		try {
