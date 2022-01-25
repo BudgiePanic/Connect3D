@@ -9,6 +9,7 @@ import java.util.Map;
 
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
+import connect3DUtil.Texture;
 import connect3DUtil.TransformManager;
 
 import org.joml.Matrix4f;
@@ -194,20 +195,17 @@ public final class HardwareRenderer implements Renderer {
 			2, 1, 6,   2, 6, 7,  //bottom face
 			7, 6, 4,   7, 4, 5   //back face
 		};
-		//the {r,g,b} at each vertex. GPU interpolates the color between the vertices.
-		//0.0f == no color && 1.0f == max color
-		float[] color = new float[] {
-				0.5f, 0.0f, 0.0f,
-				1.0f, 1.0f, 1.0f,
-				0.0f, 0.0f, 0.5f,
-				0.0f, 0.5f, 0.5f,
-				0.5f, 0.0f, 0.0f,
-				1.0f, 1.0f, 1.0f,
-				0.0f, 0.0f, 0.5f,
-				0.0f, 0.5f, 0.5f
+		
+		float[] textureCoords = new float[] {
+				
 		};
 		
-		this.mesh = new Mesh(vertsCube, color, indicesCube);
+		try {
+			this.mesh = new Mesh(vertsCube, textureCoords, indicesCube, 
+					FileLoader.loadAndCreateTexture("/connect3DResources/textures/testImage.jpg"));
+		} catch (Exception e) {
+			throw new InitializationException(e.getMessage());
+		}
 		Model mdl = new Model(mesh);
 		models.add(mdl);
 		
@@ -439,19 +437,22 @@ class Mesh {
 	
 	final int indicesVBOid;
 	
-	final int colorVBOid;
+	final int textureCoordVBOid;
 	
 	final int vertexCount;
+	
+	final Texture texture;
 	
 	/**
 	 * Uploads mesh data to the GPU
 	 * @param vertices
-	 * @param colors 
+	 * @param textureCoords 
 	 * @param indices 
+	 * @param texture 
 	 */
-	Mesh(float[] vertices, float[] colors, int[] indices) {
+	Mesh(float[] vertices, float[] textureCoords, int[] indices, Texture texture) {
 		FloatBuffer verticesBuffer = null;
-		FloatBuffer colorBuffer = null;
+		FloatBuffer textureCoordBuffer = null;
 		IntBuffer indicesBuffer = null;
 		try {
 			//load vert data into auxillary memory
@@ -482,21 +483,23 @@ class Mesh {
 			int offset = 0; // the distance to the first component in the buffer
 			glVertexAttribPointer(location, size, type, normalized, stride, offset);
 			
-			//color VBO
-			colorVBOid = glGenBuffers();
-			colorBuffer = MemoryUtil.memAllocFloat(colors.length);
-			colorBuffer.put(colors).flip();
-			glBindBuffer(GL_ARRAY_BUFFER, colorVBOid);
-			glBufferData(GL_ARRAY_BUFFER, colorBuffer, GL_STATIC_DRAW);
+			//texture coord VBO
+			textureCoordVBOid = glGenBuffers();
+			textureCoordBuffer = MemoryUtil.memAllocFloat(textureCoords.length);
+			textureCoordBuffer.put(textureCoords).flip();
+			glBindBuffer(GL_ARRAY_BUFFER, textureCoordVBOid);
+			glBufferData(GL_ARRAY_BUFFER, textureCoordBuffer, GL_STATIC_DRAW);
 			location = 1;
+			size = 2;
 			glVertexAttribPointer(location, size, type, normalized, stride, offset);
 			
 			glBindVertexArray(0);
 		} finally {
 			if(verticesBuffer != null) memFree(verticesBuffer);
 			if(indicesBuffer != null) memFree(indicesBuffer);
-			if(colorBuffer != null) memFree(colorBuffer);
+			if(textureCoordBuffer != null) memFree(textureCoordBuffer);
 		}
+		this.texture = texture;
 	}
 
 	/**
@@ -522,11 +525,12 @@ class Mesh {
 	 * Cleans up the memory on the GPU that this object allocated
 	 */
 	public void delete() {
+		this.texture.delete();
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glDeleteBuffers(vboID);
 		glDeleteBuffers(indicesVBOid);
-		glDeleteBuffers(colorVBOid);
+		glDeleteBuffers(textureCoordVBOid);
 		glBindVertexArray(0);
 		glDeleteVertexArrays(vaoID);
 	}
