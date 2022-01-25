@@ -162,6 +162,7 @@ public final class HardwareRenderer implements Renderer {
 			this.shaderProgram.link();
 			this.shaderProgram.createUniform("projectionMatrix");
 			this.shaderProgram.createUniform("worldMatrix");
+			this.shaderProgram.createUniform("texture_sampler");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InitializationException(e.getMessage());
@@ -197,7 +198,22 @@ public final class HardwareRenderer implements Renderer {
 		};
 		
 		float[] textureCoords = new float[] {
-				
+			//vertex 0
+			
+			//vertex 1
+			
+			//vertex 2
+			
+			//vertex 3
+			
+			//vertex 4	
+			
+			//vertex 5
+			
+			//vertex 6			
+			
+			//vertex 7
+			
 		};
 		
 		try {
@@ -261,6 +277,7 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.bind();
 		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
 		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
+		shaderProgram.uploadInteger("texture_sampler", 0); //sample from texture unit 0.
 		//draw each model
 		for(Model m : models) {
 			m.updatePosition(xPos, m.getPosition().y, zPos);
@@ -423,6 +440,15 @@ class ShaderProgram {
 			glUniformMatrix4fv(uniforms.get(uniformName), false, buffer); //upload the buffer to the GPU
 		}
 	}
+	
+	/**
+	 * Upload an integer to the GPU via a uniform in the shader program.
+	 * @param uniformName
+	 * @param data
+	 */
+	public void uploadInteger(String uniformName, int data) {
+		glUniform1i(uniforms.get(uniformName), data);
+	}
 }
 
 /**
@@ -508,6 +534,8 @@ class Mesh {
 	public void draw() {
 		//set state
 		glBindVertexArray(vaoID);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture.textureID);
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glDrawElements( GL_TRIANGLES,	//rendering primitives being used
