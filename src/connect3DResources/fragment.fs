@@ -1,9 +1,11 @@
 #version 330
 //FRAGMENT SHADER
-in vec3 exColor;
+in vec2 exTextureCoordinate;
 out vec4 fragmentColor;
+
+uniform sampler2D texture_sampler;
 
 void main()
 {
-	fragmentColor = vec4(exColor, 1.0);
+	fragmentColor = texture(texture_sampler, exTextureCoordinate);
 }
