@@ -199,26 +199,26 @@ public final class HardwareRenderer implements Renderer {
 		
 		float[] textureCoords = new float[] {
 			//vertex 0
-			
+			0.0f, 0.0f,
 			//vertex 1
-			
+			1.0f, 0.0f,
 			//vertex 2
-			
+			1.0f, 1.0f,
 			//vertex 3
-			
+			0.0f, 1.0f,
 			//vertex 4	
-			
+			0.0f, 1.0f,
 			//vertex 5
-			
+			1.0f, 1.0f,
 			//vertex 6			
-			
+			1.0f, 0.0f,
 			//vertex 7
-			
+			1.0f, 0.0f
 		};
 		
 		try {
 			this.mesh = new Mesh(vertsCube, textureCoords, indicesCube, 
-					FileLoader.loadAndCreateTexture("/connect3DResources/textures/testImage.jpg"));
+					FileLoader.loadAndCreateTexture("src/connect3DResources/textures/testImage.jpg"));
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
