@@ -9,7 +9,6 @@ import java.util.Map;
 
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
-import connect3DUtil.MathUtil;
 import connect3DUtil.TransformManager;
 
 import org.joml.Matrix4f;
@@ -138,6 +137,8 @@ public final class HardwareRenderer implements Renderer {
 		
 		GL.createCapabilities();
 		
+		glEnable(GL_DEPTH_TEST);
+		
 		glfwSetFramebufferSizeCallback(a_window, (window, width, height)->{
 			this.WIDTH = width; this.HEIGHT = height;
 			glViewport(0,0,width,height);
@@ -166,15 +167,32 @@ public final class HardwareRenderer implements Renderer {
 		}
 		
 		//create vertex data and send it to the GPU
-		float[] vertsQuad = new float[] {
-			-0.5f,  0.5f, 0.0f,  
-			-0.5f, -0.5f, 0.0f,
-			 0.5f, -0.5f, 0.0f,
-			 0.5f,  0.5f, 0.0f,
+		float[] vertsCube = new float[] {
+			//vertex 0
+			-0.5f, 0.5f, 0.5f,
+			//vertex 1
+			-0.5f, -0.5f, 0.5f,
+			//vertex 2
+			0.5f, -0.5f, 0.5f,
+			//vertex 3
+			0.5f, 0.5f, 0.5f,
+			//vertex 4
+			-0.5f, 0.5f, -0.5f,
+			//vertex 5
+			0.5f, 0.5f, -0.5f,
+			//vertex 6
+			-0.5f, -0.5f, -0.5f,
+			//vertex 7
+			0.5f, -0.5f, -0.5f
 		};
-		
-		int[] indicesQuad = new int[] {
-				0,1,3,  3,1,2
+		//CCW vertex rotation on face
+		int[] indicesCube= new int[] {
+			0, 1, 3,   3, 1, 2, //front face triangles
+			4, 0, 3,   5, 4, 3,  //top face triangles
+			3, 2, 7,   5, 3, 7,  //right face
+			6, 1, 0,   6, 0, 4,  //left face
+			2, 1, 6,   2, 6, 7,  //bottom face
+			7, 6, 4,   7, 4, 5   //back face
 		};
 		//the {r,g,b} at each vertex. GPU interpolates the color between the vertices.
 		//0.0f == no color && 1.0f == max color
@@ -182,10 +200,14 @@ public final class HardwareRenderer implements Renderer {
 				0.5f, 0.0f, 0.0f,
 				1.0f, 1.0f, 1.0f,
 				0.0f, 0.0f, 0.5f,
+				0.0f, 0.5f, 0.5f,
+				0.5f, 0.0f, 0.0f,
+				1.0f, 1.0f, 1.0f,
+				0.0f, 0.0f, 0.5f,
 				0.0f, 0.5f, 0.5f
 		};
 		
-		this.mesh = new Mesh(vertsQuad, color, indicesQuad);
+		this.mesh = new Mesh(vertsCube, color, indicesCube);
 		Model mdl = new Model(mesh);
 		models.add(mdl);
 		
@@ -222,6 +244,7 @@ public final class HardwareRenderer implements Renderer {
 		if(isKeyPressed(GLFW_KEY_C)) rotation += 1.0;
 		if(isKeyPressed(GLFW_KEY_V)) zPos -= 0.1f;
 		if(isKeyPressed(GLFW_KEY_B)) zPos += 0.1f;
+		if(isKeyPressed(GLFW_KEY_S)) scale += 0.1f;
 		glClearColor(red, green, blue, 1.0f);
 	}
 	float red = 0.0f;
@@ -231,6 +254,7 @@ public final class HardwareRenderer implements Renderer {
 	float yaw = 0.0f;
 	float rotation = 0.0f;
 	float zPos = 0.0f;
+	float scale = 1.0f;
 	@Override
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -243,6 +267,7 @@ public final class HardwareRenderer implements Renderer {
 		for(Model m : models) {
 			m.updatePosition(xPos, m.getPosition().y, zPos);
 			m.updateRotation(m.getRotation().x, rotation, yaw);
+			m.updateScale(scale);
 			transformManager.updateWorldMatrix(m.getPosition(), m.getRotation(), m.getScale());
 			shaderProgram.uploadMat4f("worldMatrix", transformManager.worldMatrix);
 			m.getMesh().draw();
