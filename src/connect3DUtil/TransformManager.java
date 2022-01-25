@@ -16,7 +16,16 @@ public final class TransformManager {
 	/**
 	 * Converts model relative coordinates to world space coordinates.
 	 */
-	public final Matrix4f worldMatrix;
+	private final Matrix4f worldMatrix;
+	/**
+	 * Converts world space coordinates into camera space coordinates
+	 */
+	private final Matrix4f viewMatrix;
+	/**
+	 * Combination of the world and view matrix.
+	 * Converts model coordinates into camera space coordinates.
+	 */
+	public final Matrix4f worldAndViewMatrix;
 	
 	/**
 	 * Creates a projection matrix and a world transform matrix.
@@ -24,6 +33,8 @@ public final class TransformManager {
 	public TransformManager() {
 		projectionMatrix = new Matrix4f();
 		worldMatrix = new Matrix4f();
+		viewMatrix = new Matrix4f();
+		worldAndViewMatrix = new Matrix4f();
 	}
 	
 	/**
@@ -51,7 +62,7 @@ public final class TransformManager {
 	 * @param rotations 
 	 * @param scale 
 	 */
-	public void updateWorldMatrix(Vector3f translation, Vector3f rotations, float scale) {
+	public void updateWorldAndViewMatrix(Vector3f translation, Vector3f rotations, float scale) {
 		float yaw,pitch,roll;
 		pitch = (float)Math.toRadians(rotations.x);
 		yaw = (float)Math.toRadians(rotations.y);
@@ -60,5 +71,15 @@ public final class TransformManager {
 		rotateX(pitch).rotateY(yaw).rotateZ(roll).
 		scale(scale);
 		
+		viewMatrix.mul(worldMatrix, worldAndViewMatrix);
+	}
+	
+	/**
+	 * Update the view matrix based on a camera.
+	 * @param camera
+	 *  The camera being used to update the view matrix.
+	 */
+	public void updateViewMatrix(Camera camera) {
+		viewMatrix.identity().lookAt(camera.worldPosition, camera.cameraPointingAt, camera.worldUp);
 	}
 }

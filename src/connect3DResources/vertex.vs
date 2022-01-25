@@ -6,10 +6,10 @@ layout (location=1) in vec2 textureCoordinate;
 out vec2 exTextureCoordinate;
 
 uniform mat4 projectionMatrix;
-uniform mat4 worldMatrix;
+uniform mat4 worldAndViewMatrix;
 
 void main()
 {
-	gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
+	gl_Position = projectionMatrix * worldAndViewMatrix * vec4(position, 1.0);
 	exTextureCoordinate = textureCoordinate;
 }

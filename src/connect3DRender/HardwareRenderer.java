@@ -9,6 +9,7 @@ import java.util.Map;
 
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
+import connect3DUtil.Camera;
 import connect3DUtil.Texture;
 import connect3DUtil.TransformManager;
 
@@ -98,6 +99,11 @@ public final class HardwareRenderer implements Renderer {
 	 */
 	private final List<Model> models = new ArrayList<>();
 	
+	/**
+	 * Scene camera.
+	 */
+	private final Camera camera = new Camera();
+	
 	
 	@Override
 	public void addComponent(Component c) { this.drawables.add(c); }
@@ -139,6 +145,7 @@ public final class HardwareRenderer implements Renderer {
 		GL.createCapabilities();
 		
 		glEnable(GL_DEPTH_TEST);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		
 		glfwSetFramebufferSizeCallback(a_window, (window, width, height)->{
 			this.WIDTH = width; this.HEIGHT = height;
@@ -161,7 +168,7 @@ public final class HardwareRenderer implements Renderer {
 			this.shaderProgram.createFragmentShader(fragmentSource);
 			this.shaderProgram.link();
 			this.shaderProgram.createUniform("projectionMatrix");
-			this.shaderProgram.createUniform("worldMatrix");
+			this.shaderProgram.createUniform("worldAndViewMatrix");
 			this.shaderProgram.createUniform("texture_sampler");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -304,25 +311,13 @@ public final class HardwareRenderer implements Renderer {
 	public void pollEvents() throws IllegalStateException {
 		System.out.println("events polled");
 		glfwPollEvents();
-		if(isKeyPressed(GLFW_KEY_Q)) red += 0.01;
-		if(isKeyPressed(GLFW_KEY_W)) green += 0.01;
-		if(isKeyPressed(GLFW_KEY_E)) blue += 0.01;
-		if(isKeyPressed(GLFW_KEY_Z)) xPos += 0.01;
-		if(isKeyPressed(GLFW_KEY_X)) yaw += 1.0;
-		if(isKeyPressed(GLFW_KEY_C)) rotation += 1.0;
-		if(isKeyPressed(GLFW_KEY_V)) zPos -= 0.1f;
-		if(isKeyPressed(GLFW_KEY_B)) zPos += 0.1f;
-		if(isKeyPressed(GLFW_KEY_S)) scale += 0.1f;
-		glClearColor(red, green, blue, 1.0f);
+		float amount = (float)Math.toRadians(1.0);
+		if(isKeyPressed(GLFW_KEY_A)) camera.theta += amount;
+		if(isKeyPressed(GLFW_KEY_D)) camera.theta -= amount;
+		if(isKeyPressed(GLFW_KEY_W)) camera.chi += amount;
+		if(isKeyPressed(GLFW_KEY_S)) camera.chi -= amount;
+		camera.updatePosition();
 	}
-	float red = 0.0f;
-	float green = 0.0f;
-	float blue = 0.0f;
-	float xPos = 0.0f;
-	float yaw = 0.0f;
-	float rotation = 0.0f;
-	float zPos = 0.0f;
-	float scale = 1.0f;
 	@Override
 	public void redraw() throws IllegalStateException {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -332,13 +327,11 @@ public final class HardwareRenderer implements Renderer {
 		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
 		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
 		shaderProgram.uploadInteger("texture_sampler", 0); //sample from texture unit 0.
+		transformManager.updateViewMatrix(camera);
 		//draw each model
 		for(Model m : models) {
-			m.updatePosition(xPos, m.getPosition().y, zPos);
-			m.updateRotation(m.getRotation().x, rotation, yaw);
-			m.updateScale(scale);
-			transformManager.updateWorldMatrix(m.getPosition(), m.getRotation(), m.getScale());
-			shaderProgram.uploadMat4f("worldMatrix", transformManager.worldMatrix);
+			transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
+			shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
 			m.getMesh().draw();
 		} 
 		shaderProgram.unbind();
