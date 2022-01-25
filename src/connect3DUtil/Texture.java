@@ -14,7 +14,7 @@ public class Texture {
 	/**
 	 * The texture ID assigned by openGL
 	 */
-	private final int textureID;
+	public final int textureID;
 	
 	/**
 	 * 
