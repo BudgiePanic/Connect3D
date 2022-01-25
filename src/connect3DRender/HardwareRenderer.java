@@ -185,7 +185,37 @@ public final class HardwareRenderer implements Renderer {
 			//vertex 6
 			-0.5f, -0.5f, -0.5f,
 			//vertex 7
-			0.5f, -0.5f, -0.5f
+			0.5f, -0.5f, -0.5f,
+			//Repeating vertices to allow for proper texture coordinates on the cube faces.
+			//TOP FACE
+			//vertex 4 repeated :: vertex 8
+			-0.5f, 0.5f, -0.5f,
+			//vertex 5 repeated :: vertex 9
+			0.5f, 0.5f, -0.5f,
+			//vertex 0 repeated :: vertex 10
+			-0.5f, 0.5f, 0.5f,
+			//vertex 3 repeated :: vertex 11
+			0.5f, 0.5f, 0.5f,
+			//RIGHT FACE
+			// vertex 3 repeated :: vertex 12
+			0.5f, 0.5f, 0.5f,
+			// vertex 2 repeated :: vertex 13
+			0.5f, -0.5f, 0.5f,
+			//LEFT FACE
+			// vertex 0 repeated :: vertex 14
+			-0.5f, 0.5f, 0.5f,
+			// vertex 1 repeated :: vertex 15
+			-0.5f, -0.5f, 0.5f,
+			//BOTTOM FACE
+			// vertex 6 repeated :: vertex 16
+			-0.5f, -0.5f, -0.5f,
+			// vertex 7 repeated :: vertex 17
+			0.5f, -0.5f, -0.5f,
+			// vertex 1 repeated :: vertex 18
+			-0.5f, -0.5f, 0.5f,
+			// vertex 2 repeated :: vertex 19
+			0.5f, -0.5f, 0.5f,
+			
 		};
 		//CCW vertex rotation on face
 		int[] indicesCube= new int[] {
