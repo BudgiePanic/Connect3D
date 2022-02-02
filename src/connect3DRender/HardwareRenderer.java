@@ -66,6 +66,11 @@ public final class HardwareRenderer implements Renderer {
 	private final TransformManager transformManager = new TransformManager();
 	
 	/**
+	 * Object that encapsulates input handling code.
+	 */
+	private InputHandler iHandler = new InputHandler();
+	
+	/**
 	 * The width of the GLFW window in pixels
 	 */
 	private int WIDTH = 1280;
@@ -179,54 +184,24 @@ public final class HardwareRenderer implements Renderer {
 			glViewport(0,0,width,height);
 		});
 		
-		glfwSetKeyCallback(a_window, (window, key, scancode, action, modifiers)->{ //TODO this is a good candidate to delegate to some input object...
-			if(key == GLFW_KEY_1 && action == GLFW_PRESS) {
-				x++;
-			} else if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
-				x--;
-			} else if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
-				z++;
-			} else if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
-				z--;
-			} else if(key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-				message = "place";
-				notifyObservers();
-				return;
-			}
-			
-			float amount = 10.0f;
-			if(key == GLFW_KEY_A && action == GLFW_PRESS) {
-				camera.addToPhi(amount);
-				camera.updatePosition();
-			} else
-			if(key == GLFW_KEY_D && action == GLFW_PRESS) {
-				camera.addToPhi(-amount);
-				camera.updatePosition();
-			} else 
-			if(key == GLFW_KEY_S && action == GLFW_PRESS) {
-				camera.addToTheta(amount);
-				camera.updatePosition();
-			} else 
-			if(key == GLFW_KEY_W && action == GLFW_PRESS) {
-				camera.addToTheta(-amount);
-				camera.updatePosition();
-			} else 
-			if(key == GLFW_KEY_Q && action == GLFW_PRESS) {
-				camera.radius += 0.1;
-				camera.updatePosition();
-			} else 
-			if(key == GLFW_KEY_E && action == GLFW_PRESS) {
-				camera.radius -= 0.1;
-				camera.updatePosition();
-			}
+		glfwSetKeyCallback(a_window, (window, key, scancode, action, modifiers)->{ 
+			iHandler.keyboard(key, action);
 		});
 		
-		glfwSetCursorPosCallback(a_window, (window, xPos, yPos)->{ //TODO you should delegate this to some input handling object.
-			
+		glfwSetScrollCallback(a_window, (window, xScroll, yScroll)->{
+			iHandler.mouseScrolled(yScroll);
+		});
+		
+		glfwSetCursorPosCallback(a_window, (window, xPos, yPos)->{ 
+			iHandler.mouseMoved(xPos, yPos);
 		});
 		
 		glfwSetMouseButtonCallback(a_window, (window, button, action, modifier)->{
-			//TODO this should be delegated to some input handling object.
+			iHandler.mouseButton(button, action);
+		});
+		
+		glfwSetCursorEnterCallback(a_window, (window, entered)->{
+			iHandler.windowEvent(entered);
 		});
 		
 		//Create shader program!
@@ -388,6 +363,7 @@ public final class HardwareRenderer implements Renderer {
 	}
 	@Override
 	public void redraw() throws IllegalStateException {
+		camera.updatePosition();
 		for(Component c : drawables) {
 			c.draw(this); //collect draw requests... this may add models to the models field.
 		}
@@ -430,15 +406,152 @@ public final class HardwareRenderer implements Renderer {
 
 	@Override
 	public void drawMessage(String msg) {} //TODO
-	
-	//==============================================
-	
-	private boolean isKeyPressed(int key) {
-		return glfwGetKey(a_window, key) == GLFW_PRESS;
-	}
-	
-	//==============================================
 
+	/**
+	 * Handles user input.
+	 * @author Benjamin
+	 *
+	 */
+	private class InputHandler {
+		
+		private boolean mouseOverWindow = false;
+		private boolean isDragging = false;
+		private boolean isRMBdragging = false;
+		private boolean isPressing = false;
+		private int xPos = -1, yPos = -1;
+		private int lastX = -1, lastY = -1;
+		private static final int press = GLFW_PRESS;
+		private static final int release = GLFW_RELEASE;
+		private static final int LMB = GLFW_MOUSE_BUTTON_1;
+		private static final int RMB = GLFW_MOUSE_BUTTON_2;
+		
+
+		/**
+		 * Handle key pressed.
+		 * @param key
+		 * @param action
+		 */
+		public void keyboard(int key, int action) {
+			if(action == press) {
+				if(key == GLFW_KEY_Q) {
+					x = 0; y = 0;
+				}
+				if(key == GLFW_KEY_E) {
+					x = 3; y = 3;
+				}
+				message = "place";
+				notifyObservers();
+			}
+		} //TODO
+
+		/**
+		 * Called when the mouse cursor enters the window.
+		 * @param entered
+		 * if the mouse cursor entered the window.
+		 */
+		public void windowEvent(boolean entered) {
+			mouseOverWindow = entered;
+		}
+
+		/**
+		 * If LMB pressed, cast ray into scene and try to place.
+		 * If RMB pressed, begin dragging.
+		 * @param button
+		 * @param action
+		 */
+		public void mouseButton(int button, int action) {
+			if(!mouseOverWindow) return;
+			if(action == press) {
+				mousePressed(button);
+			} else if(action == release) {
+				if(isPressing) {
+					mouseClicked(button, xPos, yPos);
+				}
+				isPressing = false;
+			}
+			
+		}
+
+		/**
+		 * If the mouse moved while dragging, move the camera.
+		 * If mouse moved while not dragging, cast ray into scene.
+		 * @param xPos
+		 * @param yPos
+		 */
+		public void mouseMoved(double xPos, double yPos) {
+			if(!mouseOverWindow) return;
+			this.xPos = (int)xPos; this.yPos = (int)yPos;
+			if(isDragging) mouseDragged((int)xPos, (int)yPos);
+			else ;/*castRay(); action == hover...*/ //TODO
+		}
+
+		/**
+		 * Scroll up means decrease the camera distance to the board.
+		 * Scroll down means increase the distance of the camera to the board.
+		 * @param yScroll
+		 * +ve value == scrolled up
+		 * -ve value == scrolled down
+		 */
+		public void mouseScrolled(double yScroll) {
+			if(!mouseOverWindow) return;
+			if(yScroll > 0) {
+				camera.radius--;
+			} else if(yScroll < 0) {
+				camera.radius++;
+			}
+		}
+		
+		/**
+		 * Called when a mouse button is pressed down.
+		 * @param button
+		 *  The button that was pressed.
+		 */
+		private void mousePressed(int button) {
+			isPressing = true;
+			if(button == LMB) {
+				isDragging = true;
+			} else if(button == RMB) {
+				isDragging = true; isRMBdragging = true;
+				lastX = xPos; lastY = yPos;
+			}
+		}
+		
+		/**
+		 * called when a mouse button that was pressed down was released.
+		 * @param button
+		 *  The mouse button that was clicked.
+		 * @param xPos
+		 *  The horizontal screen location that the click occurred on.
+		 * @param yPos
+		 *  The vertical screen location that the click occurred on.
+		 */
+		private void mouseClicked(int button, int xPos, int yPos) {
+			if(button == RMB) isRMBdragging = false;
+			else if (button == LMB) {
+				//castRayIntoScene()
+				//action = "place"
+				//notify()....
+			}
+		}
+		
+		/**
+		 * called when the mouse is being dragged.
+		 * @param xPos
+		 *  The mouse position during the drag event.
+		 * @param yPos
+		 *  The mouse position during the drag event.
+		 */
+		private void mouseDragged(int xPos, int yPos) {
+			if(isRMBdragging) {
+				float deltaPhi = xPos - lastX;
+				float deltaTheta = yPos - lastY;
+				camera.addToPhi(deltaPhi);
+				camera.addToTheta(-deltaTheta);
+				lastX = xPos; lastY = yPos;
+			}
+		}
+		
+	}
 }
 
 /**
