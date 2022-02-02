@@ -389,7 +389,7 @@ public final class HardwareRenderer implements Renderer {
 	@Override
 	public void redraw() throws IllegalStateException {
 		for(Component c : drawables) {
-			c.draw(this); //collect draw requests...
+			c.draw(this); //collect draw requests... this may add models to the models field.
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//activate shader program and update projection matrix and send projection matrix to GPU

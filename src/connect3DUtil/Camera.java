@@ -98,7 +98,6 @@ public class Camera {
 		this.worldPosition.y = radius * ((float) Math.sin(phi)) * ((float) Math.sin(theta));
 		this.worldPosition.z = radius * ((float) Math.cos(theta));
 		*/
-		System.out.println("camera position: ["+worldPosition.x+" "+worldPosition.y+" "+worldPosition.z+"]");
 	}
 	
 	/**
@@ -114,7 +113,6 @@ public class Camera {
 		phi += amount;
 		if(phi >= (2.0 * Math.PI)) phi = 0.0f;
 		if(phi < 0.0f) phi = (float)(1.999 * Math.PI); //according to the wiki page, 2PI value is invalid
-		System.out.println("Phi updated: "+phi);
 	}
 	
 	/**
@@ -130,7 +128,6 @@ public class Camera {
 		theta += amount;
 		if(theta > 0.5 * Math.PI) theta = (float)(0.5 * Math.PI);
 		if(theta < 0.0f) theta = 0.01f;
-		System.out.println("Theta updated: "+theta);
 	}
 	
 	
