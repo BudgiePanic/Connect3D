@@ -4,8 +4,11 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
@@ -49,7 +52,7 @@ public final class HardwareRenderer implements Renderer {
 	 */
 	private final List<Observer> observers = new ArrayList<Observer>();
 	
-	private volatile int x,y,z;
+	private volatile int x = 0,y = 0,z = 0;
 	private volatile String message;
 //========================================
 	/**
@@ -97,12 +100,38 @@ public final class HardwareRenderer implements Renderer {
 	 * TODO TEMP
 	 * list of models that the renderer will paint each redraw.
 	 */
-	private final List<Model> models = new ArrayList<>();
+	private final Set<Model> models = new HashSet<>();
 	
 	/**
 	 * Scene camera.
 	 */
-	private final Camera camera = new Camera();
+	private final Camera camera;
+	
+	/**
+	 * The color that the drawable component has selected.
+	 */
+	private Piece activeColor = Piece.EMPTY;
+	
+	/**
+	 * The N*N*N board dimension, so we can make the camera look at the center of the board.
+	 */
+	private final int boardDimension;
+	
+	/**
+	 * Create a new Hardware renderer to render a board with boardDimension
+	 * @param boardDimension
+	 *  The dimensions of the board that this HW will be drawing.
+	 */
+	HardwareRenderer(int boardDimension){ 
+		this.boardDimension = boardDimension;
+		this.camera = new Camera();
+		float dimension = (float) boardDimension;
+		this.camera.radius = dimension * 2.0f;
+		this.camera.cameraPointingAt.x = 0.0f;
+		this.camera.cameraPointingAt.y = 0.0f;
+		this.camera.cameraPointingAt.z = 0.0f;
+		this.camera.updatePosition();
+	}
 	
 	
 	@Override
@@ -118,12 +147,10 @@ public final class HardwareRenderer implements Renderer {
 	public void removeObserver(Observer o) { this.observers.remove(o); }
 
 	@Override
-	public void setActiveColor(Piece p) {} //TODO
+	public void setActiveColor(Piece p) { this.activeColor = p; } 
 
 	@Override
-	public void notifyObservers() {
-		this.observers.forEach((o)->{o.update(x, y, z, message);});
-	}
+	public void notifyObservers() { this.observers.forEach((o)->{o.update(x, y, z, message);}); }
 
 	@Override
 	public void initialize() throws InitializationException {
@@ -150,6 +177,56 @@ public final class HardwareRenderer implements Renderer {
 		glfwSetFramebufferSizeCallback(a_window, (window, width, height)->{
 			this.WIDTH = width; this.HEIGHT = height;
 			glViewport(0,0,width,height);
+		});
+		
+		glfwSetKeyCallback(a_window, (window, key, scancode, action, modifiers)->{ //TODO this is a good candidate to delegate to some input object...
+			if(key == GLFW_KEY_1 && action == GLFW_PRESS) {
+				x++;
+			} else if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+				x--;
+			} else if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+				z++;
+			} else if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
+				z--;
+			} else if(key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+				message = "place";
+				notifyObservers();
+				return;
+			}
+			
+			float amount = 10.0f;
+			if(key == GLFW_KEY_A && action == GLFW_PRESS) {
+				camera.addToPhi(amount);
+				camera.updatePosition();
+			} else
+			if(key == GLFW_KEY_D && action == GLFW_PRESS) {
+				camera.addToPhi(-amount);
+				camera.updatePosition();
+			} else 
+			if(key == GLFW_KEY_S && action == GLFW_PRESS) {
+				camera.addToTheta(amount);
+				camera.updatePosition();
+			} else 
+			if(key == GLFW_KEY_W && action == GLFW_PRESS) {
+				camera.addToTheta(-amount);
+				camera.updatePosition();
+			} else 
+			if(key == GLFW_KEY_Q && action == GLFW_PRESS) {
+				camera.radius += 0.1;
+				camera.updatePosition();
+			} else 
+			if(key == GLFW_KEY_E && action == GLFW_PRESS) {
+				camera.radius -= 0.1;
+				camera.updatePosition();
+			}
+		});
+		
+		glfwSetCursorPosCallback(a_window, (window, xPos, yPos)->{ //TODO you should delegate this to some input handling object.
+			
+		});
+		
+		glfwSetMouseButtonCallback(a_window, (window, button, action, modifier)->{
+			//TODO this should be delegated to some input handling object.
 		});
 		
 		//Create shader program!
@@ -283,9 +360,6 @@ public final class HardwareRenderer implements Renderer {
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
-		Model mdl = new Model(mesh);
-		models.add(mdl);
-		
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
 	}
@@ -309,19 +383,15 @@ public final class HardwareRenderer implements Renderer {
 
 	@Override
 	public void pollEvents() throws IllegalStateException {
-		System.out.println("events polled");
-		glfwPollEvents();
-		float amount = (float)Math.toRadians(1.0);
-		if(isKeyPressed(GLFW_KEY_A)) camera.theta += amount;
-		if(isKeyPressed(GLFW_KEY_D)) camera.theta -= amount;
-		if(isKeyPressed(GLFW_KEY_W)) camera.chi += amount;
-		if(isKeyPressed(GLFW_KEY_S)) camera.chi -= amount;
-		camera.updatePosition();
+		//System.out.println("events polled");
+		glfwPollEvents(); //this method activates any call back methods we registered in the initialize method...
 	}
 	@Override
 	public void redraw() throws IllegalStateException {
+		for(Component c : drawables) {
+			c.draw(this); //collect draw requests...
+		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
 		//activate shader program and update projection matrix and send projection matrix to GPU
 		shaderProgram.bind();
 		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
@@ -337,7 +407,7 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.unbind();
 		
 		glfwSwapBuffers(a_window);
-		System.out.println("redrawn");
+		//System.out.println("redrawn");
 	}
 	
 	@Override
@@ -347,7 +417,16 @@ public final class HardwareRenderer implements Renderer {
 	public void drawCubeAt(int x, int y, int z, float width, float height) {} //TODO
 
 	@Override
-	public void drawSphereAt(int x, int y, int z, float radius) {} //TODO
+	public void drawSphereAt(int x, int y, int z, float radius) {
+		if(this.activeColor == Piece.EMPTY) return;
+		Model m = new Model(mesh);
+		//translate the model to be centred for the camera
+		float shift = (float)this.boardDimension * 0.5f;
+		shift -= radius * 0.5f;
+		m.updatePosition(x - shift, y, z - shift);
+		m.updateScale(radius);
+		models.add(m);
+	} //TODO
 
 	@Override
 	public void drawMessage(String msg) {} //TODO
@@ -609,6 +688,24 @@ class Mesh {
 		glBindVertexArray(0);
 		glDeleteVertexArrays(vaoID);
 	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(indicesVBOid, textureCoordVBOid, vaoID, vboID, vertexCount);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Mesh other = (Mesh) obj;
+		return indicesVBOid == other.indicesVBOid && textureCoordVBOid == other.textureCoordVBOid
+				&& vaoID == other.vaoID && vboID == other.vboID && vertexCount == other.vertexCount;
+	}
 }
 
 /**
@@ -709,5 +806,24 @@ class Model{
 	 */
 	Mesh getMesh() {
 		return this.mesh;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(mesh, position, rotation, scale);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Model other = (Model) obj;
+		return Objects.equals(mesh, other.mesh) && Objects.equals(position, other.position)
+				&& Objects.equals(rotation, other.rotation)
+				&& Float.floatToIntBits(scale) == Float.floatToIntBits(other.scale);
 	}
 }
