@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import connect3DCore.Piece;
@@ -222,6 +223,8 @@ public final class HardwareRenderer implements Renderer {
 			this.shaderProgram.createUniform("projectionMatrix");
 			this.shaderProgram.createUniform("worldAndViewMatrix");
 			this.shaderProgram.createUniform("texture_sampler");
+			this.shaderProgram.createUniform("color");
+			this.shaderProgram.createUniform("useColor");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InitializationException(e.getMessage());
@@ -395,7 +398,7 @@ public final class HardwareRenderer implements Renderer {
 	@Override
 	public void drawSphereAt(int x, int y, int z, float radius) {
 		if(this.activeColor == Piece.EMPTY) return;
-		Model m = new Model(mesh);
+		Model m = new Model(mesh, activeColor.colorVector());
 		//translate the model to be centred for the camera
 		float shift = (float)this.boardDimension * 0.5f;
 		shift -= radius * 0.5f;
@@ -688,6 +691,16 @@ class ShaderProgram {
 	public void uploadInteger(String uniformName, int data) {
 		glUniform1i(uniforms.get(uniformName), data);
 	}
+	
+	
+	/**
+	 * Upload a vector3f to the GPU via a uniform.
+	 * @param uniformName
+	 * @param data
+	 */
+	public void uploadVec3f(String uniformName, Vector3f data) {
+		glUniform3f(uniforms.get(uniformName), data.x, data.y, data.z);
+	}
 }
 
 /**
@@ -696,6 +709,12 @@ class ShaderProgram {
  *
  */
 class Mesh {
+	
+	/**
+	 * The color white. Used if the color field is not set and not texture was provided.
+	 */
+	static final Vector3f defaultColor = new Vector3f(1.0f,1.0f,1.0f);
+	
 	final int vaoID;
 	
 	final int vboID;
@@ -706,19 +725,28 @@ class Mesh {
 	
 	final int vertexCount;
 	
-	final Texture texture;
+	final int normalsVBOid;
+	
+	final Optional<Texture> texture;
+	
+	/**
+	 * The color to draw this mesh in.
+	 */
+	private Vector3f color;
 	
 	/**
 	 * Uploads mesh data to the GPU
 	 * @param vertices
 	 * @param textureCoords 
 	 * @param indices 
+	 * @param normals
 	 * @param texture 
 	 */
-	Mesh(float[] vertices, float[] textureCoords, int[] indices, Texture texture) {
+	Mesh(float[] vertices, float[] textureCoords, int[] indices, float[] normals, Texture texture) {
 		FloatBuffer verticesBuffer = null;
 		FloatBuffer textureCoordBuffer = null;
 		IntBuffer indicesBuffer = null;
+		FloatBuffer normalBuffer = null;
 		try {
 			//load vert data into auxillary memory
 			verticesBuffer = memAllocFloat(vertices.length);
@@ -758,13 +786,38 @@ class Mesh {
 			size = 2;
 			glVertexAttribPointer(location, size, type, normalized, stride, offset);
 			
+			//normals buffer
+			normalsVBOid = glGenBuffers();
+			normalBuffer = MemoryUtil.memAllocFloat(normals.length);
+			normalBuffer.put(normals).flip();
+			glBindBuffer(GL_ARRAY_BUFFER, normalsVBOid);
+			glBufferData(GL_ARRAY_BUFFER, normalBuffer, GL_STATIC_DRAW);
+			location = 2;
+			size = 3;
+			glVertexAttribPointer(location, size, type, normalized, stride, offset);
+			
 			glBindVertexArray(0);
 		} finally {
 			if(verticesBuffer != null) memFree(verticesBuffer);
 			if(indicesBuffer != null) memFree(indicesBuffer);
 			if(textureCoordBuffer != null) memFree(textureCoordBuffer);
+			if(normalBuffer != null) memFree(normalBuffer);
 		}
-		this.texture = texture;
+		
+		if(texture == null) {
+			this.texture = Optional.empty();
+		} else {
+			this.texture = Optional.of(texture);
+		}
+	}
+	
+	/**
+	 * Set the color for this mesh to be drawn in.
+	 * @param color
+	 *  The color of the mesh.
+	 */
+	public void setMeshColor(Vector3f color) {
+		this.color = color;
 	}
 
 	/**
@@ -774,9 +827,12 @@ class Mesh {
 		//set state
 		glBindVertexArray(vaoID);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture.textureID);
+		texture.ifPresent((textureValue)->{
+			glBindTexture(GL_TEXTURE_2D, textureValue.textureID);
+		});
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
 		glDrawElements( GL_TRIANGLES,	//rendering primitives being used
 						vertexCount,	//the number of elements to render
 						GL_UNSIGNED_INT,//the type of data in the indices buffer
@@ -785,6 +841,8 @@ class Mesh {
 		//unset state
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
+		glDisableVertexAttribArray(2);
+		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindVertexArray(0);
 	}
 
@@ -792,12 +850,13 @@ class Mesh {
 	 * Cleans up the memory on the GPU that this object allocated
 	 */
 	public void delete() {
-		this.texture.delete();
+		this.texture.ifPresent((texture)->{texture.delete();});
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glDeleteBuffers(vboID);
 		glDeleteBuffers(indicesVBOid);
 		glDeleteBuffers(textureCoordVBOid);
+		glDeleteBuffers(normalsVBOid);
 		glBindVertexArray(0);
 		glDeleteVertexArrays(vaoID);
 	}
@@ -833,17 +892,22 @@ class Model{
 	private final Vector3f position;
 	private float scale;
 	private final Vector3f rotation;
+	private final Vector3f color;
 	
 	/**
 	 * Create a new model.
 	 * @param mesh
 	 *  The mesh that this model will use.
+	 * @param color
+	 *  The color of this model. The mesh will be drawn with this color iff it does not have a texture.
+	 *  This value can be null. 
 	 */
-	Model(Mesh mesh){
+	Model(Mesh mesh, Vector3f color){
 		this.mesh = mesh;
 		this.position = new Vector3f(0,0,0);
 		this.scale = 1.0f;
 		this.rotation = new Vector3f(0,0,0);
+		this.color = color;
 	}
 	
 	/**
