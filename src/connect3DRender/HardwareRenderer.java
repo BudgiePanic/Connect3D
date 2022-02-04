@@ -381,6 +381,10 @@ public final class HardwareRenderer implements Renderer {
 		for(Model m : models) {
 			transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
 			shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
+			if(m.getMesh().texture.isEmpty()) {
+				shaderProgram.uploadVec3f("color", m.getColor().orElse(Model.defaultColor));
+			}
+			shaderProgram.uploadInteger("useColor", m.getMesh().texture.isEmpty() ? 1 : 0);
 			m.getMesh().draw();
 		} 
 		shaderProgram.unbind();
@@ -730,11 +734,6 @@ class Mesh {
 	final Optional<Texture> texture;
 	
 	/**
-	 * The color to draw this mesh in.
-	 */
-	private Vector3f color;
-	
-	/**
 	 * Uploads mesh data to the GPU
 	 * @param vertices
 	 * @param textureCoords 
@@ -810,15 +809,6 @@ class Mesh {
 			this.texture = Optional.of(texture);
 		}
 	}
-	
-	/**
-	 * Set the color for this mesh to be drawn in.
-	 * @param color
-	 *  The color of the mesh.
-	 */
-	public void setMeshColor(Vector3f color) {
-		this.color = color;
-	}
 
 	/**
 	 * Makes LWJGL calls to render this mesh
@@ -888,11 +878,12 @@ class Mesh {
  *
  */
 class Model{
+	public static final Vector3f defaultColor = new Vector3f(1.0f,1.0f,1.0f);
 	private final Mesh mesh;
 	private final Vector3f position;
 	private float scale;
 	private final Vector3f rotation;
-	private final Vector3f color;
+	private final Optional<Vector3f> color;
 	
 	/**
 	 * Create a new model.
@@ -907,7 +898,16 @@ class Model{
 		this.position = new Vector3f(0,0,0);
 		this.scale = 1.0f;
 		this.rotation = new Vector3f(0,0,0);
-		this.color = color;
+		this.color = ((color == null) ? (Optional.empty()) : (Optional.of(color)));
+	}
+	
+	/**
+	 * Get the color that this model is using
+	 * @return
+	 *  The color of this model. May be null.
+	 */
+	Optional<Vector3f> getColor() {
+		return this.color;
 	}
 	
 	/**
