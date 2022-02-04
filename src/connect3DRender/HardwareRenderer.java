@@ -13,6 +13,7 @@ import java.util.Set;
 
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
+import connect3DResources.MeshLoader;
 import connect3DUtil.Camera;
 import connect3DUtil.Texture;
 import connect3DUtil.TransformManager;
@@ -333,9 +334,9 @@ public final class HardwareRenderer implements Renderer {
 			1.0f, 1.0f
 		};
 		
-		try { //TODO the mesh wants a float array of normal data, but we dont have normal data for the cube...
-			this.mesh = new Mesh(vertsCube, textureCoords, indicesCube, 
-					FileLoader.loadAndCreateTexture("src/connect3DResources/textures/testImage.jpg"));
+		try { 
+			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines(""), //TODO
+											FileLoader.loadAndCreateTexture("src/connect3DResources/textures/testImage.jpg"));
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
