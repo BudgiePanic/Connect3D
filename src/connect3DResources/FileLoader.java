@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.stb.STBImage.*;
@@ -75,6 +77,32 @@ public final class FileLoader {
 		}
 		Texture answer = new Texture(width, height, buffer);
 		stbi_image_free(buffer);
+		return answer;
+	}
+	
+	/**
+	 * Reads all lines of a file and returns them as a list.
+	 * @param relativePath
+	 *  The relative path of the file that will be read.
+	 * @return
+	 *  The lines of the file in a list.
+	 * @throws Exception
+	 *  if the file cannot be found.
+	 */
+	public static List<String> readAllLines(String relativePath) throws Exception {
+		List<String> answer = new ArrayList<String>();
+		try {
+			InputStream is = FileLoader.class.getResourceAsStream(relativePath);
+			if(is == null) throw new Exception("Could not find: ["+relativePath+"]");
+			InputStreamReader isr = new InputStreamReader(is);
+			BufferedReader br = new BufferedReader(isr);
+			for(String line; (line = br.readLine()) != null;) {
+				answer.add(line);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new Exception(e);
+		}
 		return answer;
 	}
 }
