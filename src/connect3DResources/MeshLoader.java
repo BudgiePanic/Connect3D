@@ -81,7 +81,7 @@ public final class MeshLoader {
 			}
 		}
 		
-		return parseMeshInfo(vertices, textureCoords, normals, faces);
+		return parseMeshInfo(vertices, textureCoords, normals, faces, texture);
 	}
 	
 	/**
@@ -90,10 +90,10 @@ public final class MeshLoader {
 	 * @param normals
 	 * @param faces
 	 * @return
+	 * @throws Exception 
 	 */
-	private static Mesh parseMeshInfo(List<Vector3f> vertices, List<Vector2f> textureCoords, List<Vector3f> normals, List<Face> faces) {
+	private static Mesh parseMeshInfo(List<Vector3f> vertices, List<Vector2f> textureCoords, List<Vector3f> normals, List<Face> faces, Texture texture) throws Exception {
 		List<Integer> indices = new ArrayList<>();
-		
 		float[] arr_vertices = new float[vertices.size() * 3];
 		int index = 0;
 		for(Vector3f vertex : vertices) {
@@ -104,15 +104,17 @@ public final class MeshLoader {
 		}
 		
 		float[] arr_textureCoords = new float[vertices.size() * 2];
-		float[] arr_normals = new float[vertices.size() * 2];
+		float[] arr_normals = new float[vertices.size() * 3];
 		
 		for(Face face : faces) {
 			for(IndexGroup idx : face.indexGroups) {
 				processFace(idx, textureCoords, normals, indices, arr_textureCoords, arr_normals);
 			}
 		}
-		
-		return null;
+		int[] arr_indices = new int[indices.size()];
+		arr_indices = indices.stream().mapToInt((Integer i) -> i).toArray();
+		Mesh mesh = new Mesh(arr_vertices, arr_textureCoords, arr_indices, arr_normals, texture);
+		return mesh;
 	}
 
 	/**
@@ -198,7 +200,7 @@ class IndexGroup{
 		if(length > 1) {
 			String textureCoordinate = tokens[1];
 			if(textureCoordinate.length() > 0) {
-				answer.indexTextureCoord = Integer.parseInt(textureCoordinate);
+				answer.indexTextureCoord = Integer.parseInt(textureCoordinate) - 1;
 			}
 			if(length > 2) {
 				answer.indexVectorNormal = Integer.parseInt(tokens[2]) - 1;
