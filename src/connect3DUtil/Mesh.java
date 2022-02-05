@@ -88,7 +88,7 @@ public class Mesh {
 	 * @param normals
 	 * @param texture 
 	 */
-	Mesh(float[] vertices, float[] textureCoords, int[] indices, float[] normals, Texture texture) {
+	public Mesh(float[] vertices, float[] textureCoords, int[] indices, float[] normals, Texture texture) {
 		FloatBuffer verticesBuffer = null;
 		FloatBuffer textureCoordBuffer = null;
 		IntBuffer indicesBuffer = null;
