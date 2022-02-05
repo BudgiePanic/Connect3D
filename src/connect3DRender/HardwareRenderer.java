@@ -172,12 +172,13 @@ public final class HardwareRenderer implements Renderer {
 		//try to make the window.
 		a_window = glfwCreateWindow(WIDTH, HEIGHT, "Connect3D", NULL, NULL);
 		if(a_window == NULL) throw new InitializationException("GLFW window creation failed!");
-		
 		glfwMakeContextCurrent(a_window);
 		glfwSwapInterval(1); //enable V-Sync
 		glfwShowWindow(a_window);
 		
 		GL.createCapabilities();
+		
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //TODO TEMP
 		
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -233,8 +234,11 @@ public final class HardwareRenderer implements Renderer {
 		}
 		
 		try { 
-			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/cube.obj"), 
+			/*this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/cube.obj"), 
 											FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
+			*/
+			
+			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), null);
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
@@ -307,7 +311,8 @@ public final class HardwareRenderer implements Renderer {
 		float shift = (float)this.boardDimension * 0.5f;
 		shift -= radius * 0.5f;
 		m.updatePosition(x - shift, y, z - shift);
-		m.updateScale(radius);
+		//m.updateScale(radius);
+		m.updateScale(0.5f);
 		models.add(m);
 	} //TODO
 
