@@ -6,8 +6,8 @@ import java.util.List;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import connect3DUtil.Material;
 import connect3DUtil.Mesh;
-import connect3DUtil.Texture;
 
 /**
  * Loads model information from OBJ files.
@@ -25,24 +25,26 @@ public final class MeshLoader {
 	 * Converts OBJ file format lines into a Mesh object.
 	 * @param lines
 	 *  The source lines from an OBJ file.
-	 * @param texture
-	 *  The texture this Mesh will use. Can be null for a mesh with no texture.
+	 * @param material 
+	 *  The material of the mesh.
 	 * @return
 	 *  A mesh object containing the file's information.
 	 * @throws Exception
 	 *  Thrown if there is a problem when creating the mesh. 
+	 * @throws IllegalArgumentException
+	 *  Thrown if the provided material is null. 
 	 */
-	public static Mesh loadMesh(List<String> lines, Texture texture) throws Exception{
+	public static Mesh loadMesh(List<String> lines, Material material) throws Exception, IllegalArgumentException{
 		if(lines == null || lines.isEmpty()) throw new Exception("source lines must be provided!");
-		if(texture == null) System.out.println("Creating a mesh with no texture...");
-		
+		if(material == null) throw new IllegalArgumentException("material cannot be null!"); 
+			
 		List<Vector3f> vertices = new ArrayList<>();
 		List<Vector2f> textureCoords = new ArrayList<>();
 		List<Vector3f> normals = new ArrayList<>();
 		List<Face> faces = new ArrayList<>();
 		
 		for(String line : lines) {
-			System.out.println("Parsing line: ["+line+"]");
+			//System.out.println("Parsing line: ["+line+"]");
 			String[] tokens = line.split("\\s+"); //split lines based on spaces
 			switch(tokens[0]) {
 				case "v":
@@ -81,7 +83,7 @@ public final class MeshLoader {
 			}
 		}
 		
-		return parseMeshInfo(vertices, textureCoords, normals, faces, texture);
+		return parseMeshInfo(vertices, textureCoords, normals, faces, material);
 	}
 	
 	/**
@@ -89,10 +91,12 @@ public final class MeshLoader {
 	 * @param textureCoords
 	 * @param normals
 	 * @param faces
+	 * @param material
 	 * @return
+	 *  the created mesh.
 	 * @throws Exception 
 	 */
-	private static Mesh parseMeshInfo(List<Vector3f> vertices, List<Vector2f> textureCoords, List<Vector3f> normals, List<Face> faces, Texture texture) throws Exception {
+	private static Mesh parseMeshInfo(List<Vector3f> vertices, List<Vector2f> textureCoords, List<Vector3f> normals, List<Face> faces, Material material) throws Exception {
 		List<Integer> indices = new ArrayList<>();
 		float[] arr_vertices = new float[vertices.size() * 3];
 		int index = 0;
@@ -113,7 +117,7 @@ public final class MeshLoader {
 		}
 		int[] arr_indices = new int[indices.size()];
 		arr_indices = indices.stream().mapToInt((Integer i) -> i).toArray();
-		Mesh mesh = new Mesh(arr_vertices, arr_textureCoords, arr_indices, arr_normals, texture);
+		Mesh mesh = new Mesh(arr_vertices, arr_textureCoords, arr_indices, arr_normals, material);
 		return mesh;
 	}
 
@@ -165,7 +169,7 @@ class Face{
 	 * @throws Exception 
 	 */
 	Face(String group1, String group2, String group3) throws Exception{
-		System.out.println("Parsing Face: ["+group1+"] ["+group2+"] ["+group3+"]");
+		//System.out.println("Parsing Face: ["+group1+"] ["+group2+"] ["+group3+"]");
 		indexGroups[0] = IndexGroup.parseLine(group1);
 		indexGroups[1] = IndexGroup.parseLine(group2);
 		indexGroups[2] = IndexGroup.parseLine(group3);
@@ -192,7 +196,7 @@ class IndexGroup{
 	 */
 	static IndexGroup parseLine(String line) throws Exception{
 		IndexGroup answer = new IndexGroup();
-		System.out.println("Generating index group from: ["+line+"]");
+		//System.out.println("Generating index group from: ["+line+"]");
 		String[] tokens = line.split("/");
 		int length = tokens.length;
 		
