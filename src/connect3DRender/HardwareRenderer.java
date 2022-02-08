@@ -15,12 +15,16 @@ import connect3DCore.Piece;
 import connect3DResources.FileLoader;
 import connect3DResources.MeshLoader;
 import connect3DUtil.Camera;
+import connect3DUtil.Material;
 import connect3DUtil.Texture;
 import connect3DUtil.TransformManager;
 import connect3DUtil.Mesh;
+import connect3DUtil.PointLight;
+import connect3DUtil.PointLight.Attenuation;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
@@ -116,6 +120,16 @@ public final class HardwareRenderer implements Renderer {
 	private final Camera camera;
 	
 	/**
+	 * The light that is illuminating the scene.
+	 */
+	private final PointLight sceneLight;
+	
+	/**
+	 * The color of the ambient light of the scene.
+	 */
+	private final Vector3f ambientLight;
+	
+	/**
 	 * The color that the drawable component has selected.
 	 */
 	private Piece activeColor = Piece.EMPTY;
@@ -139,6 +153,13 @@ public final class HardwareRenderer implements Renderer {
 		this.camera.cameraPointingAt.y = 0.0f;
 		this.camera.cameraPointingAt.z = 0.0f;
 		this.camera.updatePosition();
+		//dim ambient light.
+		this.ambientLight = new Vector3f(0.3f, 0.3f, 0.3f);
+		Vector3f white = new Vector3f(1.0f, 1.0f, 1.0f);
+		Vector3f lightPosition = new Vector3f();
+		float lightIntensity = 1.0f;
+		this.sceneLight = new PointLight(white, lightPosition, lightIntensity);
+		this.sceneLight.setAttenuation(new Attenuation(0.0f, 0.0f, 1.0f));
 	}
 	
 	
@@ -226,19 +247,24 @@ public final class HardwareRenderer implements Renderer {
 			this.shaderProgram.createUniform("projectionMatrix");
 			this.shaderProgram.createUniform("worldAndViewMatrix");
 			this.shaderProgram.createUniform("texture_sampler");
-			this.shaderProgram.createUniform("color");
-			this.shaderProgram.createUniform("useColor");
+			//lighting uniforms
+			this.shaderProgram.createMaterialUniform("material");
+			this.shaderProgram.createUniform("ambientLight");
+			this.shaderProgram.createUniform("specularPower");
+			this.shaderProgram.createPointLightUniform("pointLight");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InitializationException(e.getMessage());
 		}
 		
 		try { 
-			/*this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/cube.obj"), 
-											FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
-			*/
+//			Material material = new Material();
+			Material material = new Material(new Vector4f(0.0f,1.0f,1.0f,1.0f), 1.0f);
+//			Material material = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
+//			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
+//			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
+			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/cube.obj"), material);
 			
-			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), null);
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
@@ -281,14 +307,20 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
 		shaderProgram.uploadInteger("texture_sampler", 0); //sample from texture unit 0.
 		transformManager.updateViewMatrix(camera);
+		
+		//update the light uniforms
+		shaderProgram.uploadVec3f("ambientLight", ambientLight);
+		shaderProgram.uploadFloat("specularPower", 10.0f);
+		sceneLight.updateViewPosition(transformManager.viewMatrix);
+		shaderProgram.uploadPointLight("pointLight", sceneLight);
+		
+		
 		//draw each model
 		for(Model m : models) {
 			transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
 			shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
-			if(m.getMesh().texture.isEmpty()) {
-				shaderProgram.uploadVec3f("color", m.getColor().orElse(Model.defaultColor));
-			}
-			shaderProgram.uploadInteger("useColor", m.getMesh().texture.isEmpty() ? 1 : 0);
+			m.ready();
+			shaderProgram.uploadMaterial("material", m.getMesh().getMaterial());
 			m.getMesh().draw();
 		} 
 		shaderProgram.unbind();
@@ -307,6 +339,7 @@ public final class HardwareRenderer implements Renderer {
 	public void drawSphereAt(int x, int y, int z, float radius) {
 		if(this.activeColor == Piece.EMPTY) return;
 		Model m = new Model(mesh, activeColor.colorVector());
+//		Model m = new Model(mesh, null); //TODO Colors don't work properly
 		//translate the model to be centred for the camera
 		float shift = (float)this.boardDimension * 0.5f;
 		shift -= radius * 0.5f;
@@ -485,7 +518,7 @@ class ShaderProgram {
 		programID = glCreateProgram();
 		if(programID == 0) throw new Exception("Shader creation failed!");
 	}
-	
+
 	/**
 	 * 
 	 * @param source
@@ -579,6 +612,38 @@ class ShaderProgram {
 	}
 	
 	/**
+	 * Checks to see if the shader program has a PointLightUniform with the given name.
+	 * @param uniformName
+	 *  The name of the point light uniform.
+	 * @throws Exception
+	 *  Thrown if the shader program does not have a uniform with the provided name 
+	 */
+	public void createPointLightUniform(String uniformName) throws Exception {
+		createUniform(uniformName+".color");
+		createUniform(uniformName+".viewPosition");
+		createUniform(uniformName+".intensity");
+		createUniform(uniformName+".att.constant");
+		createUniform(uniformName+".att.linear");
+		createUniform(uniformName+".att.exponent");
+	}
+
+	/**
+	 * Checks to see if the shader program has a material uniform with the provided name.
+	 * @param uniformName 
+	 *  The name of the material uniform being checked for.
+	 * @throws Exception 
+	 *  Thrown if there is no material uniform with the provided name.
+	 * 
+	 */
+	public void createMaterialUniform(String uniformName) throws Exception {
+		createUniform(uniformName+".ambient");
+		createUniform(uniformName+".diffuse");
+		createUniform(uniformName+".specular");
+		createUniform(uniformName+".hasTexture");
+		createUniform(uniformName+".reflectance");
+	}
+	
+	/**
 	 * Upload a matrix4f to the GPU via a uniform.
 	 * @param uniformName
 	 * @param data
@@ -610,6 +675,62 @@ class ShaderProgram {
 	public void uploadVec3f(String uniformName, Vector3f data) {
 		glUniform3f(uniforms.get(uniformName), data.x, data.y, data.z);
 	}
+
+	/**
+	 * Upload material data to the GPU via a uniform in the shader program.
+	 * @param uniformName
+	 *  The name of the uniform that will recieve the material data.
+	 * @param material
+	 *  The material data.
+	 */
+	public void uploadMaterial(String uniformName, Material material) {
+		uploadVec4f(uniformName+".ambient", material.getAmbient());
+		uploadVec4f(uniformName+".diffuse", material.getDiffuse());
+		uploadVec4f(uniformName+".specular", material.getSpecular());
+		uploadInteger(uniformName+".hasTexture", 
+				material.texture.isPresent() ? 1 : 0);
+		uploadFloat(uniformName+".reflectance", material.getReflectance());
+	}
+	
+	/**
+	 * Upload the vector4f to the GPU via a uniform
+	 * @param uniformName
+	 *  The name of the uniform
+	 * @param data
+	 *  The data.
+	 */
+	public void uploadVec4f(String uniformName, Vector4f data) {
+		glUniform4f(uniforms.get(uniformName), 
+				data.x, data.y, data.y, data.z);
+	}
+
+	/**
+	 * Upload point light data to the GPU via a uniform in the shader program.
+	 * @param uniformName
+	 *  The name of the uniform.
+	 * @param light
+	 *  The light.
+	 */
+	public void uploadPointLight(String uniformName, PointLight light) {
+		uploadVec3f(uniformName+".color", light.getColor());
+		uploadFloat(uniformName+".intensity", light.getIntensity());
+		uploadVec3f(uniformName+".viewPosition", light.getViewPosition());
+		PointLight.Attenuation att = light.getAttenuation();
+		uploadFloat(uniformName+".att.constant", att.getConstant());
+		uploadFloat(uniformName+".att.linear", att.getLinear());
+		uploadFloat(uniformName+".att.exponent", att.getExponant());
+	}
+
+	/**
+	 * Upload a float to the GPU via a uniform in the shader program.
+	 * @param uniformName
+	 *  The name of the uniform.
+	 * @param f
+	 *  The data being sent.
+	 */
+	public void uploadFloat(String uniformName, float f) {
+		glUniform1f(uniforms.get(uniformName), f);
+	}
 }
 
 /**
@@ -620,7 +741,7 @@ class ShaderProgram {
  *
  */
 class Model{
-	public static final Vector3f defaultColor = new Vector3f(1.0f,1.0f,1.0f);
+	
 	private final Mesh mesh;
 	private final Vector3f position;
 	private float scale;
@@ -643,6 +764,17 @@ class Model{
 		this.color = ((color == null) ? (Optional.empty()) : (Optional.of(color)));
 	}
 	
+	/**
+	 * Readies this model's mesh with its color information if there is no texture.
+	 */
+	public void ready() {
+		Material material = mesh.getMaterial();
+		if(material.texture.isEmpty() && color.isPresent()) {
+			Vector4f col = new Vector4f(color.get(),1.0f);
+			material.updateColor(col);
+		}
+	}
+
 	/**
 	 * Get the color that this model is using
 	 * @return
