@@ -6,7 +6,7 @@ layout (location=2) in vec3 normal; //a normalized vector pointing perpendicular
 
 out vec2 exTextureCoordinate;
 out vec3 worldViewVertexPosition;
-out vec3 worldlViewNormal;
+out vec3 worldViewNormal;
 
 uniform mat4 projectionMatrix;
 uniform mat4 worldAndViewMatrix;
@@ -19,6 +19,6 @@ void main()
 	gl_Position = projectionMatrix * worldAndViewMatrix * vec4(position, 1.0);
 	exTextureCoordinate = textureCoordinate;
 	
-	worldViewNormal = normalize(worldAndViewMatrix * vec4(normal), 0.0).xyz;
+	worldViewNormal = normalize(worldAndViewMatrix * vec4(normal, 0.0)).xyz;
 	worldViewVertexPosition = modelViewPosition.xyz;
 }
