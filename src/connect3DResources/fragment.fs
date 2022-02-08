@@ -36,7 +36,6 @@ uniform vec3 ambientLight; //the color of the ambient light
 uniform float specularPower;
 uniform Material material;
 uniform PointLight pointLight;
-uniform vec3 cameraPosition;
 
 //global color variables
 vec4 ambientColor;
@@ -68,14 +67,14 @@ vec4 calculatePointLight(PointLight light, vec3 vertexPosition, vec3 normal)
 	//diffuse
 	vec3 lightDirection = light.viewPosition - vertexPosition;
 	vec3 toLightSource = normalize(lightDirection);
-	float diffuseFactor = max(dot(normal, to_light_source),0.0);
+	float diffuseFactor = max(dot(normal, toLightSource),0.0);
 	c_diffuse = diffuseColor * vec4(light.color, 1.0) * light.intensity * diffuseFactor;
 	
 	//specular
-	vec3 cameraDirection = normalize(-position); //camera is at 0,0,0 in view space...
+	vec3 cameraDirection = normalize(-vertexPosition); //camera is at 0,0,0 in view space...
 	vec3 fromLightSource = -toLightSource;
 	vec3 reflectedLight = normalize(reflect(fromLightSource, normal));
-	float specularFactor = max(dot(camera_direction, reflectedLight), 0.0);
+	float specularFactor = max(dot(cameraDirection, reflectedLight), 0.0);
 	specularFactor = pow(specularFactor, specularPower);
 	c_specular = specularColor * specularFactor * material.reflectance * vec4(light.color, 1.0);
 	
@@ -88,9 +87,9 @@ vec4 calculatePointLight(PointLight light, vec3 vertexPosition, vec3 normal)
 
 void main()
 {
-	configureColors(material, exTextCoord);
+	configureColors(material, exTextureCoordinate);
 	
-	vec4 diffuseSpecularComponent = calcPointLight(pointLight, worldViewVertexPosition, worldViewNormal);
+	vec4 diffuseSpecularComponent = calculatePointLight(pointLight, worldViewVertexPosition, worldViewNormal);
 	
-	fragColor = ambientColor * vec4(ambientLight, 1) + diffuseSpecularComponent;
+	fragmentColor = ambientColor * vec4(ambientLight, 1) + diffuseSpecularComponent;
 }
