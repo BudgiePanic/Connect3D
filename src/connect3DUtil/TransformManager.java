@@ -20,7 +20,7 @@ public final class TransformManager {
 	/**
 	 * Converts world space coordinates into camera space coordinates
 	 */
-	private final Matrix4f viewMatrix;
+	public final Matrix4f viewMatrix;
 	/**
 	 * Combination of the world and view matrix.
 	 * Converts model coordinates into camera space coordinates.
