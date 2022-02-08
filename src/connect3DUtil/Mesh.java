@@ -75,10 +75,11 @@ public class Mesh {
 	final int normalsVBOid;
 	
 	/**
-	 * The texture this mesh is using.
-	 * If there is no texture, a color should be supplied to the shader program on the GPU.
+	 * The material that this mesh is using.
+	 * The material is a mutable object.
+	 * If the same material is aliased over multiple meshes, then there will be problems...
 	 */
-	public final Optional<Texture> texture;
+	private Material material;
 	
 	/**
 	 * Uploads mesh data to the GPU
@@ -86,9 +87,9 @@ public class Mesh {
 	 * @param textureCoords 
 	 * @param indices 
 	 * @param normals
-	 * @param texture 
+	 * @param material 
 	 */
-	public Mesh(float[] vertices, float[] textureCoords, int[] indices, float[] normals, Texture texture) {
+	public Mesh(float[] vertices, float[] textureCoords, int[] indices, float[] normals, Material material) {
 		FloatBuffer verticesBuffer = null;
 		FloatBuffer textureCoordBuffer = null;
 		IntBuffer indicesBuffer = null;
@@ -150,11 +151,7 @@ public class Mesh {
 			if(normalBuffer != null) memFree(normalBuffer);
 		}
 		
-		if(texture == null) {
-			this.texture = Optional.empty();
-		} else {
-			this.texture = Optional.of(texture);
-		}
+		this.material = material;
 	}
 
 	/**
@@ -164,8 +161,8 @@ public class Mesh {
 		//set state
 		glBindVertexArray(vaoID);
 		glActiveTexture(GL_TEXTURE0);
-		texture.ifPresent((textureValue)->{
-			glBindTexture(GL_TEXTURE_2D, textureValue.textureID);
+		material.texture.ifPresent((Texture texture)->{
+			glBindTexture(GL_TEXTURE_2D, texture.textureID);
 		});
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
@@ -187,7 +184,7 @@ public class Mesh {
 	 * Cleans up the memory on the GPU that this object allocated
 	 */
 	public void delete() {
-		this.texture.ifPresent((texture)->{texture.delete();});
+		this.material.delete();
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glDeleteBuffers(vboID);
@@ -196,6 +193,15 @@ public class Mesh {
 		glDeleteBuffers(normalsVBOid);
 		glBindVertexArray(0);
 		glDeleteVertexArrays(vaoID);
+	}
+	
+	/**
+	 * Get the material that this mesh is using.
+	 * @return
+	 *  The material of the mesh.
+	 */
+	public Material getMaterial() {
+		return this.material;
 	}
 
 	@Override
