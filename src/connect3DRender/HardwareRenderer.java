@@ -157,7 +157,7 @@ public final class HardwareRenderer implements Renderer {
 		this.ambientLight = new Vector3f(0.4f, 0.4f, 0.4f);
 		Vector3f white = new Vector3f(1.0f, 1.0f, 1.0f);
 		Vector3f lightPosition = new Vector3f();
-		float lightIntensity = 1.0f;
+		float lightIntensity = 20.0f;
 		this.sceneLight = new PointLight(white, lightPosition, lightIntensity);
 		this.sceneLight.setAttenuation(new Attenuation(0.0f, 0.0f, 1.0f));
 	}
@@ -258,12 +258,10 @@ public final class HardwareRenderer implements Renderer {
 		}
 		
 		try { 
-//			Material material = new Material();
-			Material material = new Material(new Vector4f(0.0f,1.0f,1.0f,1.0f), 1.0f);
+			Material material = new Material();
 //			Material material = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
-//			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
+			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
 //			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
-			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/cube.obj"), material);
 			
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
@@ -308,6 +306,10 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.uploadInteger("texture_sampler", 0); //sample from texture unit 0.
 		transformManager.updateViewMatrix(camera);
 		
+		//make the light be the camera position
+		sceneLight.getWorldPosition().x = camera.worldPosition.x;
+		sceneLight.getWorldPosition().y = camera.worldPosition.y;
+		sceneLight.getWorldPosition().z = camera.worldPosition.z;
 		//update the light uniforms
 		shaderProgram.uploadVec3f("ambientLight", ambientLight);
 		shaderProgram.uploadFloat("specularPower", 10.0f);
@@ -345,7 +347,7 @@ public final class HardwareRenderer implements Renderer {
 		shift -= radius * 0.5f;
 		m.updatePosition(x - shift, y, z - shift);
 		//m.updateScale(radius);
-		m.updateScale(0.5f);
+		m.updateScale(0.6f);
 		models.add(m);
 	} //TODO
 
