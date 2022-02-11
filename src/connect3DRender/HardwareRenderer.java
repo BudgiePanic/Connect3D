@@ -154,7 +154,7 @@ public final class HardwareRenderer implements Renderer {
 		this.camera.cameraPointingAt.z = 0.0f;
 		this.camera.updatePosition();
 		//dim ambient light.
-		this.ambientLight = new Vector3f(0.3f, 0.3f, 0.3f);
+		this.ambientLight = new Vector3f(0.4f, 0.4f, 0.4f);
 		Vector3f white = new Vector3f(1.0f, 1.0f, 1.0f);
 		Vector3f lightPosition = new Vector3f();
 		float lightIntensity = 1.0f;
@@ -701,7 +701,7 @@ class ShaderProgram {
 	 */
 	public void uploadVec4f(String uniformName, Vector4f data) {
 		glUniform4f(uniforms.get(uniformName), 
-				data.x, data.y, data.y, data.z);
+				data.x, data.y, data.z, data.w);
 	}
 
 	/**
