@@ -14,7 +14,7 @@ public final class Material {
 	/**
 	 * White is the default color.
 	 */
-	private static final Vector4f defaultColor = new Vector4f(1.0f,1.0f,1.0f,1.0f);
+	private static final Vector4f defaultColor = new Vector4f(ColorVector.WHITE, 1.0f);
 	
 	/**
 	 * The ambient color of this material.
@@ -99,19 +99,28 @@ public final class Material {
 		return ambient;
 	}
 	public void setAmbient(Vector4f ambient) {
-		this.ambient = ambient;
+		this.ambient.x = ambient.x;
+		this.ambient.y = ambient.y;
+		this.ambient.z = ambient.z;
+		this.ambient.w = ambient.w;
 	}
 	public Vector4f getDiffuse() {
 		return diffuse;
 	}
 	public void setDiffuse(Vector4f diffuse) {
-		this.diffuse = diffuse;
+		this.diffuse.x = diffuse.x;
+		this.diffuse.y = diffuse.y;
+		this.diffuse.z = diffuse.z;
+		this.diffuse.w = diffuse.w;
 	}
 	public Vector4f getSpecular() {
 		return specular;
 	}
 	public void setSpecular(Vector4f specular) {
-		this.specular = specular;
+		this.specular.x = specular.x;
+		this.specular.y = specular.y;
+		this.specular.z = specular.z;
+		this.specular.w = specular.w;
 	}
 	public float getReflectance() {
 		return reflectance;

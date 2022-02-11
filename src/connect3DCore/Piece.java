@@ -3,6 +3,8 @@ package connect3DCore;
 import java.awt.Color;
 
 import org.joml.Vector3f;
+
+import connect3DUtil.ColorVector;
 /**
  * Symbolic constants to refer to the different pieces on the game board.
  * Each player places a different piece.
@@ -19,7 +21,7 @@ public enum Piece {
 
 		@Override
 		public Vector3f colorVector() {
-			return new Vector3f(1.0f, 0.0f, 0.0f);
+			return ColorVector.RED;
 		}
 	},
 	BLUE {
@@ -31,7 +33,7 @@ public enum Piece {
 
 		@Override
 		public Vector3f colorVector() {
-			return new Vector3f(0.0f, 0.0f, 1.0f);
+			return ColorVector.BLUE;
 		}
 	},	
 	GREEN {
@@ -43,7 +45,7 @@ public enum Piece {
 
 		@Override
 		public Vector3f colorVector() {
-			return new Vector3f(0.0f, 1.0f, 0.0f);
+			return ColorVector.GREEN;
 		}
 	},
 	YELLOW {
@@ -55,7 +57,7 @@ public enum Piece {
 
 		@Override
 		public Vector3f colorVector() {
-			return new Vector3f(1.0f, 1.0f, 0.0f);
+			return ColorVector.YELLOW;
 		}
 	},
 	ORANGE {
@@ -79,7 +81,7 @@ public enum Piece {
 
 		@Override
 		public Vector3f colorVector() {
-			return new Vector3f(0.4f, 0.0f, 1.0f);
+			return ColorVector.PURPLE;
 		}
 	},	
 	WHITE {
@@ -91,7 +93,7 @@ public enum Piece {
 
 		@Override
 		public Vector3f colorVector() {
-			return new Vector3f(1.0f, 1.0f, 1.0f);
+			return ColorVector.WHITE;
 		}
 	},
 	EMPTY {
