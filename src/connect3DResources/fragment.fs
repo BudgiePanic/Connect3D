@@ -25,6 +25,13 @@ struct Material
 	float reflectance;
 };
 
+struct DirectionalLight
+{
+	vec3 color;
+	vec3 direction;
+	float intensity;
+};
+
 in vec2 exTextureCoordinate;
 in vec3 worldViewNormal;
 in vec3 worldViewVertexPosition;
