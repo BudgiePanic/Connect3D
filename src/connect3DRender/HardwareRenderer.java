@@ -15,8 +15,9 @@ import connect3DCore.Piece;
 import connect3DResources.FileLoader;
 import connect3DResources.MeshLoader;
 import connect3DUtil.Camera;
+import connect3DUtil.ColorVector;
+import connect3DUtil.DirectionalLight;
 import connect3DUtil.Material;
-import connect3DUtil.Texture;
 import connect3DUtil.TransformManager;
 import connect3DUtil.Mesh;
 import connect3DUtil.PointLight;
@@ -125,6 +126,11 @@ public final class HardwareRenderer implements Renderer {
 	private final PointLight sceneLight;
 	
 	/**
+	 * A light to illuminate the entire scene.
+	 */
+	private final DirectionalLight sunLight;
+	
+	/**
 	 * The color of the ambient light of the scene.
 	 */
 	private final Vector3f ambientLight;
@@ -160,6 +166,12 @@ public final class HardwareRenderer implements Renderer {
 		float lightIntensity = 20.0f;
 		this.sceneLight = new PointLight(white, lightPosition, lightIntensity);
 		this.sceneLight.setAttenuation(new Attenuation(0.0f, 0.0f, 1.0f));
+		
+		double angle = Math.toRadians(75.0);
+		float xAngle = (float) Math.sin(angle);
+		float yAngle = (float) Math.cos(angle);
+		float zAngle = 0.0f;
+		this.sunLight = new DirectionalLight(new Vector3f(xAngle, yAngle, zAngle), ColorVector.WHITE, 1.0f);
 	}
 	
 	
@@ -315,7 +327,9 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.uploadFloat("specularPower", 10.0f);
 		sceneLight.updateViewPosition(transformManager.viewMatrix);
 		shaderProgram.uploadPointLight("pointLight", sceneLight);
-		
+		//update the direction light uniforms
+		sunLight.updateViewDirection(transformManager.viewMatrix);
+		shaderProgram.uploadDirectionalLight("directionalLight", sunLight);
 		
 		//draw each model
 		for(Model m : models) {
@@ -613,6 +627,19 @@ class ShaderProgram {
 	}
 	
 	/**
+	 * Checks to see if the shader program has a DirectionalLight uniform with the supplied name.
+	 * @param uniformName
+	 *  The name of the uniform.
+	 * @throws Exception
+	 *  Thrown if there is no uniform with the supplied name.
+	 */
+	public void createDirectionalLightUniform(String uniformName) throws Exception{
+		createUniform(uniformName+".color");
+		createUniform(uniformName+".direction");
+		createUniform(uniformName+".intensity");
+	}
+	
+	/**
 	 * Checks to see if the shader program has a PointLightUniform with the given name.
 	 * @param uniformName
 	 *  The name of the point light uniform.
@@ -691,6 +718,19 @@ class ShaderProgram {
 		uploadInteger(uniformName+".hasTexture", 
 				material.texture.isPresent() ? 1 : 0);
 		uploadFloat(uniformName+".reflectance", material.getReflectance());
+	}
+	
+	/**
+	 * Upload a directional light to the shader program on the GPU via a uniform.
+	 * @param uniformName
+	 *  The name of the uniform
+	 * @param light
+	 *  The directional light being uploaded.
+	 */
+	public void uploadDirectionalLight(String uniformName, DirectionalLight light) {
+		uploadVec3f(uniformName+".color", light.getColor());
+		uploadVec3f(uniformName+".direction", light.getDirection());
+		uploadFloat(uniformName+".intensity", light.getIntensity());
 	}
 	
 	/**
