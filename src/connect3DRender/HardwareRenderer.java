@@ -341,7 +341,6 @@ public final class HardwareRenderer implements Renderer {
 	public void drawSphereAt(int x, int y, int z, float radius) {
 		if(this.activeColor == Piece.EMPTY) return;
 		Model m = new Model(mesh, activeColor.colorVector());
-//		Model m = new Model(mesh, null); //TODO Colors don't work properly
 		//translate the model to be centred for the camera
 		float shift = (float)this.boardDimension * 0.5f;
 		shift -= radius * 0.5f;
