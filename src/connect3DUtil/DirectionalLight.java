@@ -1,6 +1,8 @@
 package connect3DUtil;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 /**
  * Directional lights model the sun, a light source that effects all models regardless of position.
@@ -22,6 +24,11 @@ public class DirectionalLight {
 	private final Vector3f color;
 	
 	/**
+	 * The direction of the light from the perspective of the view matrix.
+	 */
+	private final Vector4f viewDirection;
+	
+	/**
 	 * The intensity of the light.
 	 */
 	private float intensity;
@@ -36,6 +43,20 @@ public class DirectionalLight {
 		this.direction = direction;
 		this.color = color;
 		this.intensity = intensity;
+		this.viewDirection = new Vector4f();
+	}
+	
+	/**
+	 * Update this directional light's view direction.
+	 * @param viewMatrix
+	 *  The view matrix.
+	 */
+	public void updateViewDirection(Matrix4f viewMatrix) {
+		this.viewDirection.x = this.direction.x;
+		this.viewDirection.y = this.direction.y;
+		this.viewDirection.z = this.direction.z;
+		this.viewDirection.w = 0.0f;
+		viewDirection.mul(viewMatrix);
 	}
 	
 	/**
@@ -88,6 +109,14 @@ public class DirectionalLight {
 	 */
 	public float getIntensity() {
 		return intensity;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public Vector4f getViewDirection() {
+		return viewDirection;
 	}
 	
 	
