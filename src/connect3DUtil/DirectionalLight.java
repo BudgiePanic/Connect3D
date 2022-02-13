@@ -26,7 +26,12 @@ public class DirectionalLight {
 	/**
 	 * The direction of the light from the perspective of the view matrix.
 	 */
-	private final Vector4f viewDirection;
+	private final Vector4f viewDirectionTemp;
+	
+	/**
+	 * An auxiliary vector that just stores the xyz components of the vec4.
+	 */
+	private final Vector3f viewDirection;
 	
 	/**
 	 * The intensity of the light.
@@ -43,7 +48,8 @@ public class DirectionalLight {
 		this.direction = direction;
 		this.color = color;
 		this.intensity = intensity;
-		this.viewDirection = new Vector4f();
+		this.viewDirectionTemp = new Vector4f();
+		this.viewDirection = new Vector3f();
 	}
 	
 	/**
@@ -52,11 +58,15 @@ public class DirectionalLight {
 	 *  The view matrix.
 	 */
 	public void updateViewDirection(Matrix4f viewMatrix) {
-		this.viewDirection.x = this.direction.x;
-		this.viewDirection.y = this.direction.y;
-		this.viewDirection.z = this.direction.z;
-		this.viewDirection.w = 0.0f;
-		viewDirection.mul(viewMatrix);
+		this.viewDirectionTemp.x = this.direction.x;
+		this.viewDirectionTemp.y = this.direction.y;
+		this.viewDirectionTemp.z = this.direction.z;
+		this.viewDirectionTemp.w = 0.0f;
+		viewDirectionTemp.mul(viewMatrix);
+		
+		this.viewDirection.x = viewDirectionTemp.x;
+		this.viewDirection.y = viewDirectionTemp.y;
+		this.viewDirection.z = viewDirectionTemp.z;
 	}
 	
 	/**
@@ -115,7 +125,7 @@ public class DirectionalLight {
 	 * 
 	 * @return
 	 */
-	public Vector4f getViewDirection() {
+	public Vector3f getViewDirection() {
 		return viewDirection;
 	}
 	

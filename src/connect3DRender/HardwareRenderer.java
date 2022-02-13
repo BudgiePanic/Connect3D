@@ -730,7 +730,7 @@ class ShaderProgram {
 	 */
 	public void uploadDirectionalLight(String uniformName, DirectionalLight light) {
 		uploadVec3f(uniformName+".color", light.getColor());
-		uploadVec3f(uniformName+".direction", light.getDirection());
+		uploadVec3f(uniformName+".direction", light.getViewDirection());
 		uploadFloat(uniformName+".intensity", light.getIntensity());
 	}
 	
