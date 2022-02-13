@@ -163,7 +163,7 @@ public final class HardwareRenderer implements Renderer {
 		this.ambientLight = new Vector3f(0.4f, 0.4f, 0.4f);
 		Vector3f white = new Vector3f(1.0f, 1.0f, 1.0f);
 		Vector3f lightPosition = new Vector3f();
-		float lightIntensity = 20.0f;
+		float lightIntensity = 5.0f;
 		this.sceneLight = new PointLight(white, lightPosition, lightIntensity);
 		this.sceneLight.setAttenuation(new Attenuation(0.0f, 0.0f, 1.0f));
 		
@@ -273,8 +273,8 @@ public final class HardwareRenderer implements Renderer {
 		try { 
 			Material material = new Material();
 //			Material material = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
-			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
-//			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
+//			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
+			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
 			
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
@@ -312,35 +312,9 @@ public final class HardwareRenderer implements Renderer {
 			c.draw(this); //collect draw requests... this may add models to the models field.
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//activate shader program and update projection matrix and send projection matrix to GPU
-		shaderProgram.bind();
-		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
-		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
-		shaderProgram.uploadInteger("texture_sampler", 0); //sample from texture unit 0.
-		transformManager.updateViewMatrix(camera);
 		
-		//make the light be the camera position
-		sceneLight.getWorldPosition().x = camera.worldPosition.x;
-		sceneLight.getWorldPosition().y = camera.worldPosition.y;
-		sceneLight.getWorldPosition().z = camera.worldPosition.z;
-		//update the light uniforms
-		shaderProgram.uploadVec3f("ambientLight", ambientLight);
-		shaderProgram.uploadFloat("specularPower", 10.0f);
-		sceneLight.updateViewPosition(transformManager.viewMatrix);
-		shaderProgram.uploadPointLight("pointLight", sceneLight);
-		//update the direction light uniforms
-		sunLight.updateViewDirection(transformManager.viewMatrix);
-		shaderProgram.uploadDirectionalLight("directionLight", sunLight);
-		
-		//draw each model
-		for(Model m : models) {
-			transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
-			shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
-			m.ready();
-			shaderProgram.uploadMaterial("material", m.getMesh().getMaterial());
-			m.getMesh().draw();
-		} 
-		shaderProgram.unbind();
+		paintScene();
+		paintHUD();
 		
 		glfwSwapBuffers(a_window);
 		//System.out.println("redrawn");
@@ -361,12 +335,54 @@ public final class HardwareRenderer implements Renderer {
 		shift -= radius * 0.5f;
 		m.updatePosition(x - shift, y, z - shift);
 		//m.updateScale(radius);
-		m.updateScale(0.6f);
+		m.updateScale(0.4f);
 		models.add(m);
 	} //TODO
 
 	@Override
 	public void drawMessage(String msg) {} //TODO
+	
+	/**
+	 * Draws stuff that is physically in the world
+	 */
+	private void paintScene() {
+		//activate shader program and update projection matrix and send projection matrix to GPU
+		shaderProgram.bind();
+		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
+		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
+		shaderProgram.uploadInteger("texture_sampler", 0); //sample from texture unit 0.
+		transformManager.updateViewMatrix(camera);
+			
+		//make the light be the camera position
+		sceneLight.getWorldPosition().x = camera.worldPosition.x;
+		sceneLight.getWorldPosition().y = camera.worldPosition.y;
+		sceneLight.getWorldPosition().z = camera.worldPosition.z;
+		//update the light uniforms
+		shaderProgram.uploadVec3f("ambientLight", ambientLight);
+		shaderProgram.uploadFloat("specularPower", 10.0f);
+		sceneLight.updateViewPosition(transformManager.viewMatrix);
+		shaderProgram.uploadPointLight("pointLight", sceneLight);
+		//update the direction light uniforms
+		sunLight.updateViewDirection(transformManager.viewMatrix);
+		shaderProgram.uploadDirectionalLight("directionLight", sunLight);
+			
+		//draw each model
+		for(Model m : models) {
+			transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
+			shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
+			m.ready();
+			shaderProgram.uploadMaterial("material", m.getMesh().getMaterial());
+			m.getMesh().draw();
+		} 
+		shaderProgram.unbind();
+	}
+	
+	/**
+	 * Draws "heads up display"
+	 */
+	private void paintHUD() {
+		
+	}
 
 	/**
 	 * Handles user input.
