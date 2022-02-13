@@ -167,7 +167,7 @@ public final class HardwareRenderer implements Renderer {
 		this.sceneLight = new PointLight(white, lightPosition, lightIntensity);
 		this.sceneLight.setAttenuation(new Attenuation(0.0f, 0.0f, 1.0f));
 		
-		double angle = Math.toRadians(75.0);
+		double angle = Math.toRadians(45.0);
 		float xAngle = (float) Math.sin(angle);
 		float yAngle = (float) Math.cos(angle);
 		float zAngle = 0.0f;
@@ -264,6 +264,7 @@ public final class HardwareRenderer implements Renderer {
 			this.shaderProgram.createUniform("ambientLight");
 			this.shaderProgram.createUniform("specularPower");
 			this.shaderProgram.createPointLightUniform("pointLight");
+			this.shaderProgram.createDirectionalLightUniform("directionLight");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InitializationException(e.getMessage());
@@ -329,7 +330,7 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.uploadPointLight("pointLight", sceneLight);
 		//update the direction light uniforms
 		sunLight.updateViewDirection(transformManager.viewMatrix);
-		shaderProgram.uploadDirectionalLight("directionalLight", sunLight);
+		shaderProgram.uploadDirectionalLight("directionLight", sunLight);
 		
 		//draw each model
 		for(Model m : models) {
