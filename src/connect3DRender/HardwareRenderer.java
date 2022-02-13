@@ -800,10 +800,27 @@ class ShaderProgram {
  */
 class Model{
 	
+	/**
+	 * The mesh that this model is using.
+	 * Multiple models can share the same mesh.
+	 */
 	private final Mesh mesh;
+	/**
+	 * The position of this model in the world.
+	 */
 	private final Vector3f position;
+	/**
+	 * The scale applied to the mesh to bring it into world scale.
+	 */
 	private float scale;
+	/**
+	 * The rotation applied to the mesh to bring it into the world position.
+	 */
 	private final Vector3f rotation;
+	/**
+	 * Optional flat color to be placed onto the mesh.
+	 * Some Meshes have a texture which will be used instead.
+	 */
 	private final Optional<Vector3f> color;
 	
 	/**
