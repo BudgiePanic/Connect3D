@@ -20,6 +20,7 @@ import connect3DUtil.DirectionalLight;
 import connect3DUtil.Material;
 import connect3DUtil.TransformManager;
 import connect3DUtil.Mesh;
+import connect3DUtil.Model;
 import connect3DUtil.PointLight;
 import connect3DUtil.PointLight.Attenuation;
 
@@ -102,6 +103,11 @@ public final class HardwareRenderer implements Renderer {
 	 * The shader program this renderer is using.
 	 */
 	private ShaderProgram shaderProgram;
+	
+	/**
+	 * The shader program used to orthographically project text to the screen.
+	 */
+	private ShaderProgram hudShaderProgram;
 	
 	/**
 	 * TODO TEMP
@@ -270,6 +276,14 @@ public final class HardwareRenderer implements Renderer {
 			throw new InitializationException(e.getMessage());
 		}
 		
+		//create HUD shader program
+		try {
+			this.hudShaderProgram = new ShaderProgram();
+		} catch (Exception e) {
+			throw new InitializationException(e.getMessage());
+		}
+		
+		//create meshes
 		try { 
 			Material material = new Material();
 //			Material material = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
@@ -288,6 +302,7 @@ public final class HardwareRenderer implements Renderer {
 		glfwFreeCallbacks(a_window);
 		glfwDestroyWindow(a_window);
 		if(shaderProgram != null) shaderProgram.delete();
+		if(hudShaderProgram != null) hudShaderProgram.delete();
 		if(mesh != null) mesh.delete();
 		glfwTerminate();
 		glfwSetErrorCallback(null).free();
@@ -343,7 +358,8 @@ public final class HardwareRenderer implements Renderer {
 	public void drawMessage(String msg) {} //TODO
 	
 	/**
-	 * Draws stuff that is physically in the world
+	 * Draws stuff that is physically in the world.
+	 * Things that can be seen by the camera.
 	 */
 	private void paintScene() {
 		//activate shader program and update projection matrix and send projection matrix to GPU
@@ -381,7 +397,11 @@ public final class HardwareRenderer implements Renderer {
 	 * Draws "heads up display"
 	 */
 	private void paintHUD() {
+		hudShaderProgram.bind();
 		
+		
+		
+		hudShaderProgram.unbind();
 	}
 
 	/**
@@ -792,164 +812,28 @@ class ShaderProgram {
 }
 
 /**
- * A model is a Mesh combined with transformations that move it into world space when applied.
- * The transformations are mutable objects.
- * Multiple models can reuse the same mesh object.
+ * A model for displaying text.
  * @author Benjamin
  *
  */
-class Model{
+class TextModel extends Model{
+
+	/**
+	 * The depth of on-screen HUD elements.
+	 */
+	private static final float ZPOS = 0.0f;
+	/**
+	 * 
+	 */
+	private static final int VERTICES = 4;
+	
 	
 	/**
-	 * The mesh that this model is using.
-	 * Multiple models can share the same mesh.
-	 */
-	private final Mesh mesh;
-	/**
-	 * The position of this model in the world.
-	 */
-	private final Vector3f position;
-	/**
-	 * The scale applied to the mesh to bring it into world scale.
-	 */
-	private float scale;
-	/**
-	 * The rotation applied to the mesh to bring it into the world position.
-	 */
-	private final Vector3f rotation;
-	/**
-	 * Optional flat color to be placed onto the mesh.
-	 * Some Meshes have a texture which will be used instead.
-	 */
-	private final Optional<Vector3f> color;
-	
-	/**
-	 * Create a new model.
+	 * 
 	 * @param mesh
-	 *  The mesh that this model will use.
 	 * @param color
-	 *  The color of this model. The mesh will be drawn with this color iff it does not have a texture.
-	 *  This value can be null. 
 	 */
-	Model(Mesh mesh, Vector3f color){
-		this.mesh = mesh;
-		this.position = new Vector3f(0,0,0);
-		this.scale = 1.0f;
-		this.rotation = new Vector3f(0,0,0);
-		this.color = ((color == null) ? (Optional.empty()) : (Optional.of(color)));
-	}
-	
-	/**
-	 * Readies this model's mesh with its color information if there is no texture.
-	 */
-	public void ready() {
-		Material material = mesh.getMaterial();
-		if(material.texture.isEmpty() && color.isPresent()) {
-			Vector4f col = new Vector4f(color.get(),1.0f);
-			material.updateColor(col);
-		}
-	}
-
-	/**
-	 * Get the color that this model is using
-	 * @return
-	 *  The color of this model. May be null.
-	 */
-	Optional<Vector3f> getColor() {
-		return this.color;
-	}
-	
-	/**
-	 * Return the position of this model in world space.
-	 * @return
-	 *  The mutable position object of this model. 
-	 */
-	Vector3f getPosition() {
-		return position;
-	}
-	
-	/**
-	 * Return the rotation values this model uses.
-	 * @return
-	 *  The mutable rotation object of this model.
-	 */
-	Vector3f getRotation() {
-		return rotation;
-	}
-	
-	/**
-	 * Return the scale value of this model.
-	 * @return
-	 *  The scale being applied to this model.
-	 */
-	float getScale() {
-		return scale;
-	}
-	
-	/**
-	 * Update the transform that moves this model from model space to world space.
-	 * @param x
-	 *  The distance to move in the X dimension.
-	 * @param y
-	 *  The distance to move in the Y dimension.
-	 * @param z
-	 *  The distance to move in the Z dimension.
-	 */
-	void updatePosition(float x, float y, float z) {
-		this.position.x = x;
-		this.position.y = y;
-		this.position.z = z;
-	}
-	
-	/**
-	 * Update the scale this model will use.
-	 * @param scale
-	 *  The new scale from model space to world space.
-	 */
-	void updateScale(float scale) {
-		this.scale = scale;
-	}
-	
-	/**
-	 * Update the rotation values this model will use.
-	 * @param pitch
-	 *  The rotation along the X axis IN DEGREES
-	 * @param roll
-	 *  The rotation along the Z axis IN DEGREES
-	 * @param yaw
-	 *  The rotation along the Y axis IN DEGREES
-	 */
-	void updateRotation(float pitch, float roll, float yaw) {
-		rotation.x = pitch;
-		rotation.y = yaw;
-		rotation.z = roll;
-	}
-	
-	/**
-	 * Get the mesh that this model is using.
-	 * @return
-	 *  The mesh that this model is using
-	 */
-	Mesh getMesh() {
-		return this.mesh;
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(mesh, position, rotation, scale);
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Model other = (Model) obj;
-		return Objects.equals(mesh, other.mesh) && Objects.equals(position, other.position)
-				&& Objects.equals(rotation, other.rotation)
-				&& Float.floatToIntBits(scale) == Float.floatToIntBits(other.scale);
+	TextModel(Mesh mesh, Vector3f color) {
+		super(mesh, color);
 	}
 }
