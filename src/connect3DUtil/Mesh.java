@@ -27,7 +27,6 @@ import static org.lwjgl.system.MemoryUtil.memFree;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
@@ -185,6 +184,20 @@ public class Mesh {
 	 */
 	public void delete() {
 		this.material.delete();
+		glDisableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDeleteBuffers(vboID);
+		glDeleteBuffers(indicesVBOid);
+		glDeleteBuffers(textureCoordVBOid);
+		glDeleteBuffers(normalsVBOid);
+		glBindVertexArray(0);
+		glDeleteVertexArrays(vaoID);
+	}
+	
+	/**
+	 * Similar to delete, but leaves the material (and texture) unaffected. 
+	 */
+	public void clean() {
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glDeleteBuffers(vboID);
