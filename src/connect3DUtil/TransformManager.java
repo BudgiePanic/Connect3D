@@ -28,6 +28,16 @@ public final class TransformManager {
 	public final Matrix4f worldAndViewMatrix;
 	
 	/**
+	 * Orthographic projection matrix for HUD elements.
+	 */
+	private final Matrix4f orthoProjectionMatrix;
+	
+	/**
+	 * Combination of the model and orthographic matrix
+	 */
+	public final Matrix4f modelAndOrthoProjMatrix;
+	
+	/**
 	 * Creates a projection matrix and a world transform matrix.
 	 */
 	public TransformManager() {
@@ -35,6 +45,8 @@ public final class TransformManager {
 		worldMatrix = new Matrix4f();
 		viewMatrix = new Matrix4f();
 		worldAndViewMatrix = new Matrix4f();
+		orthoProjectionMatrix = new Matrix4f();
+		modelAndOrthoProjMatrix = new Matrix4f();
 	}
 	
 	/**
@@ -54,6 +66,38 @@ public final class TransformManager {
 		float aspect = width / height;
 		projectionMatrix.identity();
 		projectionMatrix.perspective(fov, aspect, near, far);
+	}
+	
+	/**
+	 * Mutates the orthographic projection matrix object.
+	 * @param left
+	 * 
+	 * @param right
+	 * 
+	 * @param bottom
+	 * 
+	 * @param top
+	 */
+	public void updateOrthoProjMatrix(float left, float right, float bottom, float top) {
+		orthoProjectionMatrix.identity();
+		orthoProjectionMatrix.setOrtho2D(left, right, bottom, top);
+	}
+	
+	/**
+	 * Updates the model ortho matrix to apply the given models world transformation 
+	 * with the orthographic projection.
+	 * @param m
+	 *  The model.
+	 */
+	public void updateModelAndOrthoMatrix(Model m) {
+		float pitch, yaw, roll;
+		pitch = (float)Math.toRadians(m.getRotation().x);
+		yaw = (float)Math.toRadians(m.getRotation().y);
+		roll = (float)Math.toRadians(m.getRotation().z);
+		worldMatrix.identity().translate(m.getPosition()).
+		rotateX(pitch).rotateY(yaw).rotateZ(roll).
+		scale(m.getScale());
+		orthoProjectionMatrix.mul(worldMatrix, modelAndOrthoProjMatrix);
 	}
 	
 	/**
