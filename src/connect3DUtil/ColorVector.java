@@ -48,4 +48,9 @@ public final class ColorVector {
 	 */
 	public static final Vector3f WHITE = new Vector3f(1.0f, 1.0f, 1.0f);
 	
+	/**
+	 * No color.
+	 */
+	public static final Vector3f NO_COLOR = null;
+	
 }
