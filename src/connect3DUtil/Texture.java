@@ -12,9 +12,19 @@ import static org.lwjgl.opengl.GL30.glGenerateMipmap;
  */
 public class Texture {
 	/**
-	 * The texture ID assigned by openGL
+	 * The texture ID assigned by openGL.
 	 */
 	public final int textureID;
+	
+	/**
+	 * The width of this texture in pixels.
+	 */
+	public final int width;
+	
+	/**
+	 * The height of this texture in pixels.
+	 */
+	public final int height;
 	
 	/**
 	 * 
@@ -36,6 +46,8 @@ public class Texture {
 		//upload buffer data to GPU
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 		glGenerateMipmap(GL_TEXTURE_2D);
+		this.width = width;
+		this.height = height;
 	}
 	
 	/**
