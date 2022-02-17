@@ -23,6 +23,8 @@ import connect3DUtil.Mesh;
 import connect3DUtil.Model;
 import connect3DUtil.PointLight;
 import connect3DUtil.PointLight.Attenuation;
+import connect3DUtil.TextModel;
+import connect3DUtil.Texture;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -120,6 +122,16 @@ public final class HardwareRenderer implements Renderer {
 	 * list of models that the renderer will paint each redraw.
 	 */
 	private final Set<Model> models = new HashSet<>();
+	
+	/**
+	 * List of messages to draw during each redraw.
+	 */
+	private final List<TextModel> textModels = new ArrayList<>();
+	
+	/**
+	 * The texture that contains the font used for draw calls.
+	 */
+	private Texture textTexture;
 	
 	/**
 	 * Scene camera.
@@ -221,6 +233,8 @@ public final class HardwareRenderer implements Renderer {
 		
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
 		glfwSetFramebufferSizeCallback(a_window, (window, width, height)->{
 			this.WIDTH = width; this.HEIGHT = height;
@@ -278,7 +292,18 @@ public final class HardwareRenderer implements Renderer {
 		
 		//create HUD shader program
 		try {
+			String vsSource = FileLoader.read("/connect3DResources/vertex_hud.vs");
+			String fsSource = FileLoader.read("/connect3DResources/fragment_hud.fs");
 			this.hudShaderProgram = new ShaderProgram();
+			this.hudShaderProgram.createVertexShader(vsSource);
+			this.hudShaderProgram.createFragmentShader(fsSource);
+			this.hudShaderProgram.link();
+			
+			hudShaderProgram.createUniform("projectionMatrix");
+			hudShaderProgram.createUniform("color");
+			
+			this.textTexture = FileLoader.loadAndCreateTexture("src/connect3DResources/textures/font_texture.png");
+			
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
@@ -304,6 +329,8 @@ public final class HardwareRenderer implements Renderer {
 		if(shaderProgram != null) shaderProgram.delete();
 		if(hudShaderProgram != null) hudShaderProgram.delete();
 		if(mesh != null) mesh.delete();
+		if(textTexture != null) textTexture.delete();
+		textModels.forEach((TextModel m)->m.tidyUp());
 		glfwTerminate();
 		glfwSetErrorCallback(null).free();
 		System.out.println("destroyed HW renderer");
@@ -355,7 +382,15 @@ public final class HardwareRenderer implements Renderer {
 	} //TODO
 
 	@Override
-	public void drawMessage(String msg) {} //TODO
+	public void drawMessage(String msg) {
+		TextModel m = new TextModel(msg, textTexture, 16, 16);
+		//position updates equate to per pixel displacement.
+		float pushDown = textModels.size() * ((float)WIDTH * 0.05f);
+		m.updatePosition(0.0f, pushDown, 0.0f);
+		//Magic numbers are: number of columns, number of rows of symbols in the font texture.
+		//Hand measured to be 16*16
+		textModels.add(m);
+	} 
 	
 	/**
 	 * Draws stuff that is physically in the world.
@@ -399,7 +434,15 @@ public final class HardwareRenderer implements Renderer {
 	private void paintHUD() {
 		hudShaderProgram.bind();
 		
-		
+		transformManager.updateOrthoProjMatrix(0, WIDTH, HEIGHT, 0);
+		for(Model m : textModels) {
+			transformManager.updateModelAndOrthoMatrix(m);
+			hudShaderProgram.uploadMat4f("projectionMatrix", transformManager.modelAndOrthoProjMatrix);
+			hudShaderProgram.uploadVec4f("color", new Vector4f(m.getColor().get(), 1.0f));
+			m.getMesh().draw();
+		}
+		textModels.forEach((TextModel m)->{m.tidyUp();});
+		textModels.clear();
 		
 		hudShaderProgram.unbind();
 	}
@@ -411,9 +454,21 @@ public final class HardwareRenderer implements Renderer {
 	 */
 	private class InputHandler {
 		
+		/**
+		 * Is the mouse over the game window when an event is triggered.
+		 */
 		private boolean mouseOverWindow = false;
+		/**
+		 * Is the mouse being dragged during an event.
+		 */
 		private boolean isDragging = false;
+		/**
+		 * Is the RMB being dragged in an event.
+		 */
 		private boolean isRMBdragging = false;
+		/**
+		 * Is a mouse button being pressed down.
+		 */
 		private boolean isPressing = false;
 		private int xPos = -1, yPos = -1;
 		private int lastX = -1, lastY = -1;
@@ -808,32 +863,5 @@ class ShaderProgram {
 	 */
 	public void uploadFloat(String uniformName, float f) {
 		glUniform1f(uniforms.get(uniformName), f);
-	}
-}
-
-/**
- * A model for displaying text.
- * @author Benjamin
- *
- */
-class TextModel extends Model{
-
-	/**
-	 * The depth of on-screen HUD elements.
-	 */
-	private static final float ZPOS = 0.0f;
-	/**
-	 * 
-	 */
-	private static final int VERTICES = 4;
-	
-	
-	/**
-	 * 
-	 * @param mesh
-	 * @param color
-	 */
-	TextModel(Mesh mesh, Vector3f color) {
-		super(mesh, color);
 	}
 }
