@@ -7,11 +7,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import connect3DCore.Piece;
 import connect3DResources.FileLoader;
 import connect3DResources.MeshLoader;
+import connect3DUtil.BoundingBox;
 import connect3DUtil.Camera;
 import connect3DUtil.ColorVector;
 import connect3DUtil.DirectionalLight;
@@ -19,8 +21,10 @@ import connect3DUtil.Material;
 import connect3DUtil.TransformManager;
 import connect3DUtil.Mesh;
 import connect3DUtil.Model;
+import connect3DUtil.Point;
 import connect3DUtil.PointLight;
 import connect3DUtil.PointLight.Attenuation;
+import connect3DUtil.SelectionManager;
 import connect3DUtil.SkyBox;
 import connect3DUtil.TextModel;
 import connect3DUtil.Texture;
@@ -74,6 +78,11 @@ public final class HardwareRenderer implements Renderer {
 	 * And object that encapsulates away the management of the world and projection martices.
 	 */
 	private final TransformManager transformManager = new TransformManager();
+	
+	/**
+	 * An object to manage user input into the 3D scene.
+	 */
+	private SelectionManager selectManager;
 	
 	/**
 	 * Object that encapsulates input handling code.
@@ -339,9 +348,11 @@ public final class HardwareRenderer implements Renderer {
 			Material material = new Material();
 			Material skyBoxMaterial = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/skybox.png"));
 //			Material material = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
-//			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
-			this.pieceMesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
+			this.pieceMesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
+//			this.pieceMesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
 			this.skybox = new SkyBox(MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/skybox.obj"), skyBoxMaterial));
+			this.selectManager = new SelectionManager(boardDimension, transformManager, MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/cube.obj"),
+					new Material()));
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
@@ -360,6 +371,7 @@ public final class HardwareRenderer implements Renderer {
 		if(pieceMesh != null) pieceMesh.delete();
 		if(textTexture != null) textTexture.delete();
 		if(skybox != null) skybox.delete();
+		if(selectManager != null)selectManager.delete();
 		textModels.forEach((TextModel m)->m.tidyUp());
 		glfwTerminate();
 		glfwSetErrorCallback(null).free();
@@ -391,7 +403,7 @@ public final class HardwareRenderer implements Renderer {
 		glfwSwapBuffers(a_window);
 		//System.out.println("redrawn");
 	}
-	
+
 	@Override
 	public void drawCylinderAt(int x, int y, int z, float radius, float height) {} //TODO
 
@@ -407,7 +419,7 @@ public final class HardwareRenderer implements Renderer {
 		shift -= radius * 0.5f;
 		m.updatePosition(x - shift, y, z - shift);
 		//m.updateScale(radius);
-		m.updateScale(0.4f);
+		m.updateScale(0.5f);
 		meshModels.get(pieceMesh).add(m);
 	} 
 	
@@ -446,6 +458,20 @@ public final class HardwareRenderer implements Renderer {
 		//update the direction light uniforms
 		sunLight.updateViewDirection(transformManager.viewMatrix);
 		shaderProgram.uploadDirectionalLight("directionLight", sunLight);
+		
+		//draw the AABB from the selection manager
+		boolean debug = true;
+		if(debug) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			selectManager.getAABB().forEach((BoundingBox b)->{
+				transformManager.updateWorldAndViewMatrix(b.getPosition(), b.getRotation(), b.getScale());
+				shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
+				b.ready();
+				shaderProgram.uploadMaterial("material", b.getMesh().getMaterial());
+				b.getMesh().draw();
+			});
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 
 		//draw the models
 		meshModels.forEach((Mesh mesh, Set<Model> models)->{
@@ -462,6 +488,7 @@ public final class HardwareRenderer implements Renderer {
 		
 		shaderProgram.unbind();
 	}
+	
 	
 	/**
 	 * Draws the skybox
@@ -543,15 +570,19 @@ public final class HardwareRenderer implements Renderer {
 		public void keyboard(int key, int action) {
 			if(action == press) {
 				if(key == GLFW_KEY_Q) {
-					x = 0; y = 0;
-				}
+					x = 0; z = 0;
+					message = "place";
+					selectManager.placed(x, z, 1.5f);
+					notifyObservers();
+				} else 
 				if(key == GLFW_KEY_E) {
-					x = 3; y = 3;
+					x = 3; z = 3;
+					message = "place";
+					selectManager.placed(x, z, 1.5f);
+					notifyObservers();
 				}
-				message = "place";
-				notifyObservers();
 			}
-		} //TODO
+		}
 
 		/**
 		 * Called when the mouse cursor enters the window.
@@ -577,6 +608,7 @@ public final class HardwareRenderer implements Renderer {
 					mouseClicked(button, xPos, yPos);
 				}
 				isPressing = false;
+				isDragging = false;
 			}
 			
 		}
@@ -591,7 +623,14 @@ public final class HardwareRenderer implements Renderer {
 			if(!mouseOverWindow) return;
 			this.xPos = (int)xPos; this.yPos = (int)yPos;
 			if(isDragging) mouseDragged((int)xPos, (int)yPos);
-			else ;/*castRay(); action == hover...*/ //TODO
+			else {
+				Optional<Point> p = selectManager.selectPlacement(WIDTH, HEIGHT, new Point(xPos, yPos), camera);
+				if(p.isPresent()) {
+					System.out.println("Hit AABB: "+p.get());
+				} else {
+					System.out.println("No AABB struck");
+				}
+			}
 		}
 
 		/**
