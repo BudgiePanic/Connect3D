@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import connect3DCore.Piece;
@@ -127,12 +125,10 @@ public final class HardwareRenderer implements Renderer {
 	 */
 	private SkyBox skybox;
 	
-	
 	/**
-	 * TODO TEMP
-	 * list of models that the renderer will paint each redraw.
+	 * The models that each mesh is associated with.
 	 */
-	private final Set<Model> models = new HashSet<>();
+	private final Map<Mesh, Set<Model>> meshModels = new HashMap<>(); 
 	
 	/**
 	 * List of messages to draw during each redraw.
@@ -349,6 +345,7 @@ public final class HardwareRenderer implements Renderer {
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
+		meshModels.put(pieceMesh, new HashSet<Model>());
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
 	}
@@ -411,9 +408,9 @@ public final class HardwareRenderer implements Renderer {
 		m.updatePosition(x - shift, y, z - shift);
 		//m.updateScale(radius);
 		m.updateScale(0.4f);
-		models.add(m);
-	} //TODO
-
+		meshModels.get(pieceMesh).add(m);
+	} 
+	
 	@Override
 	public void drawMessage(String msg) {
 		TextModel m = new TextModel(msg, textTexture, 16, 16);
@@ -451,13 +448,26 @@ public final class HardwareRenderer implements Renderer {
 		shaderProgram.uploadDirectionalLight("directionLight", sunLight);
 			
 		//draw each model
-		for(Model m : models) {
+		/*for(Model m : models) {
 			transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
 			shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
 			m.ready();
 			shaderProgram.uploadMaterial("material", m.getMesh().getMaterial());
 			m.getMesh().draw();
-		} 
+		} */
+		
+		meshModels.forEach((Mesh mesh, Set<Model> models)->{
+			mesh.startDraw();
+			models.forEach((Model m)->{
+				transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
+				shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
+				m.ready();
+				shaderProgram.uploadMaterial("material", mesh.getMaterial());
+				mesh.drawSingle();
+			});
+			mesh.endDraw();
+		});
+		
 		shaderProgram.unbind();
 	}
 	
