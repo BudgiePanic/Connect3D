@@ -13,6 +13,7 @@ public class SkyBox extends Model{
 	 */
 	public SkyBox(Mesh skyBoxMesh) {
 		super(skyBoxMesh, null);
+		this.updateScale(20.0f);
 	}
 	
 	/**
