@@ -26,7 +26,9 @@ import static org.lwjgl.system.MemoryUtil.memFree;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Collection;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
@@ -157,7 +159,19 @@ public class Mesh {
 	 * Makes LWJGL calls to render this mesh
 	 */
 	public void draw() {
-		//set state
+		startDraw();
+		glDrawElements( GL_TRIANGLES,	//rendering primitives being used
+						vertexCount,	//the number of elements to render
+						GL_UNSIGNED_INT,//the type of data in the indices buffer
+						0				//offset in the indices data
+		);
+		endDraw();
+	}
+	
+	/**
+	 * Enables the buffers on the GPU associated with this Mesh.
+	 */
+	public void startDraw() {
 		glBindVertexArray(vaoID);
 		glActiveTexture(GL_TEXTURE0);
 		material.texture.ifPresent((Texture texture)->{
@@ -166,17 +180,38 @@ public class Mesh {
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
-		glDrawElements( GL_TRIANGLES,	//rendering primitives being used
-						vertexCount,	//the number of elements to render
-						GL_UNSIGNED_INT,//the type of data in the indices buffer
-						0				//offset in the indices data
-		);
-		//unset state
+	}
+	
+	/**
+	 * Disables the buffers on the GPU associated with this Mesh.
+	 */
+	public void endDraw() {
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindVertexArray(0);
+	}
+	
+	/**
+	 * Draws all of the supplied models at once.
+	 * @param models
+	 *  The models to draw with this mesh.
+	 * @param prepare
+	 *  Actions needed to prepare OpenGL before drawing.
+	 */
+	public void draw(Collection<Model> models, Consumer<Model> prepare) {
+		models.forEach((Model m)->{
+			prepare.accept(m);
+			glDrawElements( GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
+		});
+	}
+	
+	/**
+	 * Makes a single glDrawElements call
+	 */
+	public void drawSingle() {
+		glDrawElements( GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
 	}
 
 	/**
