@@ -178,6 +178,11 @@ public final class HardwareRenderer implements Renderer {
 	 * The N*N*N board dimension, so we can make the camera look at the center of the board.
 	 */
 	private final int boardDimension;
+
+	/**
+	 * Flag to determine if the AABB should be drawn.
+	 */
+	private boolean debug = true;
 	
 	/**
 	 * Create a new Hardware renderer to render a board with boardDimension
@@ -244,8 +249,6 @@ public final class HardwareRenderer implements Renderer {
 		glfwShowWindow(a_window);
 		
 		GL.createCapabilities();
-		
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //TODO TEMP
 		
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -352,11 +355,12 @@ public final class HardwareRenderer implements Renderer {
 //			this.pieceMesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
 			this.skybox = new SkyBox(MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/skybox.obj"), skyBoxMaterial));
 			this.selectManager = new SelectionManager(boardDimension, transformManager, MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/cube.obj"),
-					new Material()));
+					new Material(new Vector4f(ColorVector.WHITE, 1.0f), 1.0f)));
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
 		meshModels.put(pieceMesh, new HashSet<Model>());
+		addObserver(selectManager);
 		this.initialized = true;
 		System.out.println("init HW renderer complete");
 	}
@@ -392,6 +396,9 @@ public final class HardwareRenderer implements Renderer {
 	@Override
 	public void redraw() throws IllegalStateException {
 		camera.updatePosition();
+		meshModels.forEach((Mesh m, Set<Model> models)->{
+			models.clear();
+		});
 		for(Component c : drawables) {
 			c.draw(this); //collect draw requests... this may add models to the models field.
 		}
@@ -401,7 +408,6 @@ public final class HardwareRenderer implements Renderer {
 		paintSkybox();
 		paintHUD();
 		glfwSwapBuffers(a_window);
-		//System.out.println("redrawn");
 	}
 
 	@Override
@@ -459,8 +465,6 @@ public final class HardwareRenderer implements Renderer {
 		sunLight.updateViewDirection(transformManager.viewMatrix);
 		shaderProgram.uploadDirectionalLight("directionLight", sunLight);
 		
-		//draw the AABB from the selection manager
-		boolean debug = true;
 		if(debug) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			selectManager.getAABB().forEach((BoundingBox b)->{
@@ -569,18 +573,7 @@ public final class HardwareRenderer implements Renderer {
 		 */
 		public void keyboard(int key, int action) {
 			if(action == press) {
-				if(key == GLFW_KEY_Q) {
-					x = 0; z = 0;
-					message = "place";
-					selectManager.placed(x, z, 1.5f);
-					notifyObservers();
-				} else 
-				if(key == GLFW_KEY_E) {
-					x = 3; z = 3;
-					message = "place";
-					selectManager.placed(x, z, 1.5f);
-					notifyObservers();
-				}
+				if(key == GLFW_KEY_BACKSPACE) debug = !debug;
 			}
 		}
 
@@ -626,10 +619,16 @@ public final class HardwareRenderer implements Renderer {
 			else {
 				Optional<Point> p = selectManager.selectPlacement(WIDTH, HEIGHT, new Point(xPos, yPos), camera);
 				if(p.isPresent()) {
-					System.out.println("Hit AABB: "+p.get());
+					x = (int)p.get().a;
+					y = 0;
+					z = (int)p.get().b;
 				} else {
-					System.out.println("No AABB struck");
+					x = -1;
+					y = -1;
+					z = -1;
 				}
+				message = "hover";
+				notifyObservers();
 			}
 		}
 
@@ -676,9 +675,14 @@ public final class HardwareRenderer implements Renderer {
 		private void mouseClicked(int button, int xPos, int yPos) {
 			if(button == RMB) isRMBdragging = false;
 			else if (button == LMB) {
-				//castRayIntoScene()
-				//action = "place"
-				//notify()....
+				Optional<Point> p = 
+						selectManager.selectPlacement(WIDTH, HEIGHT, new Point(xPos, yPos), camera);
+				if(p.isPresent()) {
+					x = (int)p.get().a;
+					z = (int)p.get().b;
+					message = "place";
+					notifyObservers();
+				}
 			}
 		}
 		
