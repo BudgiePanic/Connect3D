@@ -54,6 +54,7 @@ public final class Game implements Runnable, Observer {
 		try {
 			renderer.initialize();
 		} catch (InitializationException e) {
+			renderer.destroy();
 			e.printStackTrace();
 			System.exit(-1);
 		}
