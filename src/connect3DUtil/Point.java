@@ -32,4 +32,9 @@ public final class Point {
 	public Point(double a, double b) {
 		this.a = a; this.b = b;
 	}
+	
+	@Override
+	public String toString() {
+		return "[Point: "+a+" "+b+"]";
+	}
 }
