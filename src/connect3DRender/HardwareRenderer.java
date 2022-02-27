@@ -113,6 +113,11 @@ public final class HardwareRenderer implements Renderer {
 	private ShaderProgram hudShaderProgram;
 	
 	/**
+	 * The shader used by the skybox.
+	 */
+	private ShaderProgram skyBoxShaderProgram;
+	
+	/**
 	 * The mesh that the renderer will use to draw pieces.
 	 */
 	private Mesh pieceMesh;
@@ -316,6 +321,23 @@ public final class HardwareRenderer implements Renderer {
 			throw new InitializationException(e.getMessage());
 		}
 		
+		//create skybox shader program
+		try {
+			skyBoxShaderProgram = new ShaderProgram();
+			String vsSource = FileLoader.read("/connect3DResources/vertex_skybox.vs");
+			String fsSource = FileLoader.read("/connect3DResources/fragment_skybox.fs");
+			skyBoxShaderProgram.createVertexShader(vsSource);
+			skyBoxShaderProgram.createFragmentShader(fsSource);
+			skyBoxShaderProgram.link();
+			
+			skyBoxShaderProgram.createUniform("worldViewMatrix");
+			skyBoxShaderProgram.createUniform("projectionMatrix");
+			skyBoxShaderProgram.createUniform("texture_sampler");
+			skyBoxShaderProgram.createUniform("ambientLight");
+		} catch (Exception e) {
+			throw new InitializationException(e.getMessage());
+		}
+		
 		//create meshes
 		try { 
 			Material material = new Material();
@@ -336,8 +358,10 @@ public final class HardwareRenderer implements Renderer {
 		glfwDestroyWindow(a_window);
 		if(shaderProgram != null) shaderProgram.delete();
 		if(hudShaderProgram != null) hudShaderProgram.delete();
+		if(skyBoxShaderProgram != null) skyBoxShaderProgram.delete();
 		if(pieceMesh != null) pieceMesh.delete();
 		if(textTexture != null) textTexture.delete();
+		if(skybox != null) skybox.delete();
 		textModels.forEach((TextModel m)->m.tidyUp());
 		glfwTerminate();
 		glfwSetErrorCallback(null).free();
