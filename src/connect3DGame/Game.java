@@ -54,6 +54,7 @@ public final class Game implements Runnable, Observer {
 		try {
 			renderer.initialize();
 		} catch (InitializationException e) {
+			renderer.destroy();
 			e.printStackTrace();
 			System.exit(-1);
 		}
@@ -81,12 +82,12 @@ public final class Game implements Runnable, Observer {
 	
 	@Override
 	public void run() {
-		while((!board.hasSomeoneWon()) && (!board.isBoardFull())) {
+		while((!board.hasSomeoneWon()) && (!board.isBoardFull() && renderer.isActive())) {
 			renderer.pollEvents();
 			renderer.redraw();
 		}
 		
-		if(board.isBoardFull()) {
+		if(board.isBoardFull() || !board.hasSomeoneWon()) {
 			System.out.println("No one wins...");
 		} else {
 			System.out.println(board.getWinner() + " WINS!!!");

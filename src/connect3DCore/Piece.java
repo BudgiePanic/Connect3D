@@ -1,6 +1,10 @@
 package connect3DCore;
 
 import java.awt.Color;
+
+import org.joml.Vector3f;
+
+import connect3DUtil.ColorVector;
 /**
  * Symbolic constants to refer to the different pieces on the game board.
  * Each player places a different piece.
@@ -14,6 +18,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return Color.RED; }
+
+		@Override
+		public Vector3f colorVector() {
+			return ColorVector.RED;
+		}
 	},
 	BLUE {
 		@Override
@@ -21,6 +30,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return Color.BLUE; }
+
+		@Override
+		public Vector3f colorVector() {
+			return ColorVector.BLUE;
+		}
 	},	
 	GREEN {
 		@Override
@@ -28,6 +42,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return Color.GREEN; }
+
+		@Override
+		public Vector3f colorVector() {
+			return ColorVector.GREEN;
+		}
 	},
 	YELLOW {
 		@Override
@@ -35,6 +54,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return Color.YELLOW; }
+
+		@Override
+		public Vector3f colorVector() {
+			return ColorVector.YELLOW;
+		}
 	},
 	ORANGE {
 		@Override
@@ -42,6 +66,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return Color.ORANGE;	}
+
+		@Override
+		public Vector3f colorVector() {
+			return new Vector3f(1.0f, 0.3f, 0.0f);
+		}
 	},
 	PURPLE {
 		@Override
@@ -49,6 +78,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return new Color(103, 58, 183); }
+
+		@Override
+		public Vector3f colorVector() {
+			return ColorVector.PURPLE;
+		}
 	},	
 	WHITE {
 		@Override
@@ -56,6 +90,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return Color.WHITE; }
+
+		@Override
+		public Vector3f colorVector() {
+			return ColorVector.WHITE;
+		}
 	},
 	EMPTY {
 		@Override
@@ -63,6 +102,11 @@ public enum Piece {
 
 		@Override
 		public Color color() { return null; }
+
+		@Override
+		public Vector3f colorVector() {
+			return null;
+		}
 	};
 	
 	/**
@@ -78,4 +122,11 @@ public enum Piece {
 	 *  The piece's color.
 	 */
 	public abstract Color color();
+
+	/**
+	 * Returns a Vector3f representation of this piece's color.
+	 * @return
+	 * The color of this piece.
+	 */
+	public abstract Vector3f colorVector();
 }

@@ -52,7 +52,7 @@ public final class ConfigDialog extends JDialog {
 	/**
 	 * A combo box that allows the player to select the rendering type.
 	 */
-	JComboBox<String> renderType = new JComboBox<>(new String[] {"software","text"}) {{
+	JComboBox<String> renderType = new JComboBox<>(new String[] {"software","text","hardware"}) {{
 		addItemListener(e->{
 			main.renderType = (String)e.getItem();
 		});

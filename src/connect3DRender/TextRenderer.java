@@ -190,6 +190,9 @@ public final class TextRenderer implements Renderer {
 		}
 		this.initialized = false;
 	}
+	
+	@Override
+	public boolean isActive() { return true; }
 
 	@Override
 	public void pollEvents() throws IllegalStateException {

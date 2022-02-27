@@ -52,5 +52,12 @@ public interface Renderer extends Graphics, Subject {
 	 * @return true if the component was removed.
 	 */
 	public boolean removeComponent(Component c);
+
+	/**
+	 * Determine whether this renderer is still actively being used by the player or not.
+	 * @return
+	 *  False if the renderer has been closed / disabled by the user.
+	 */
+	public boolean isActive();
 	
 }
