@@ -446,16 +446,8 @@ public final class HardwareRenderer implements Renderer {
 		//update the direction light uniforms
 		sunLight.updateViewDirection(transformManager.viewMatrix);
 		shaderProgram.uploadDirectionalLight("directionLight", sunLight);
-			
-		//draw each model
-		/*for(Model m : models) {
-			transformManager.updateWorldAndViewMatrix(m.getPosition(), m.getRotation(), m.getScale());
-			shaderProgram.uploadMat4f("worldAndViewMatrix", transformManager.worldAndViewMatrix);
-			m.ready();
-			shaderProgram.uploadMaterial("material", m.getMesh().getMaterial());
-			m.getMesh().draw();
-		} */
-		
+
+		//draw the models
 		meshModels.forEach((Mesh mesh, Set<Model> models)->{
 			mesh.startDraw();
 			models.forEach((Model m)->{
