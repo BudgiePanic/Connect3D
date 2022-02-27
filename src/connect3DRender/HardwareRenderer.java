@@ -23,6 +23,7 @@ import connect3DUtil.Mesh;
 import connect3DUtil.Model;
 import connect3DUtil.PointLight;
 import connect3DUtil.PointLight.Attenuation;
+import connect3DUtil.SkyBox;
 import connect3DUtil.TextModel;
 import connect3DUtil.Texture;
 
@@ -112,10 +113,15 @@ public final class HardwareRenderer implements Renderer {
 	private ShaderProgram hudShaderProgram;
 	
 	/**
-	 * TODO TEMP
-	 * A mesh that the renderer will draw each redraw.
+	 * The mesh that the renderer will use to draw pieces.
 	 */
-	private Mesh mesh;
+	private Mesh pieceMesh;
+	
+	/**
+	 * The sky box that the HW renderer is using.
+	 */
+	private SkyBox skybox;
+	
 	
 	/**
 	 * TODO TEMP
@@ -315,7 +321,7 @@ public final class HardwareRenderer implements Renderer {
 			Material material = new Material();
 //			Material material = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
 //			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
-			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
+			this.pieceMesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
 			
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
@@ -330,7 +336,7 @@ public final class HardwareRenderer implements Renderer {
 		glfwDestroyWindow(a_window);
 		if(shaderProgram != null) shaderProgram.delete();
 		if(hudShaderProgram != null) hudShaderProgram.delete();
-		if(mesh != null) mesh.delete();
+		if(pieceMesh != null) pieceMesh.delete();
 		if(textTexture != null) textTexture.delete();
 		textModels.forEach((TextModel m)->m.tidyUp());
 		glfwTerminate();
@@ -373,7 +379,7 @@ public final class HardwareRenderer implements Renderer {
 	@Override
 	public void drawSphereAt(int x, int y, int z, float radius) {
 		if(this.activeColor == Piece.EMPTY) return;
-		Model m = new Model(mesh, activeColor.colorVector());
+		Model m = new Model(pieceMesh, activeColor.colorVector());
 		//translate the model to be centred for the camera
 		float shift = (float)this.boardDimension * 0.5f;
 		shift -= radius * 0.5f;
