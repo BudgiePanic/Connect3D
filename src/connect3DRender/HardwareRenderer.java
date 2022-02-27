@@ -189,10 +189,10 @@ public final class HardwareRenderer implements Renderer {
 		this.camera.cameraPointingAt.z = 0.0f;
 		this.camera.updatePosition();
 		//dim ambient light.
-		this.ambientLight = new Vector3f(0.4f, 0.4f, 0.4f);
+		this.ambientLight = new Vector3f(0.8f, 0.8f, 0.8f);
 		Vector3f white = new Vector3f(1.0f, 1.0f, 1.0f);
 		Vector3f lightPosition = new Vector3f();
-		float lightIntensity = 5.0f;
+		float lightIntensity = 1.0f;
 		this.sceneLight = new PointLight(white, lightPosition, lightIntensity);
 		this.sceneLight.setAttenuation(new Attenuation(0.0f, 0.0f, 1.0f));
 		
@@ -341,10 +341,11 @@ public final class HardwareRenderer implements Renderer {
 		//create meshes
 		try { 
 			Material material = new Material();
+			Material skyBoxMaterial = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/skybox.png"));
 //			Material material = new Material(FileLoader.loadAndCreateTexture("src/connect3DResources/textures/grassblock.png"));
 //			this.mesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/sphere.obj"), material);
 			this.pieceMesh = MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/bunny.obj"), material);
-			
+			this.skybox = new SkyBox(MeshLoader.loadMesh(FileLoader.readAllLines("/connect3DResources/models/skybox.obj"), skyBoxMaterial));
 		} catch (Exception e) {
 			throw new InitializationException(e.getMessage());
 		}
@@ -388,8 +389,8 @@ public final class HardwareRenderer implements Renderer {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		paintScene();
+		paintSkybox();
 		paintHUD();
-		
 		glfwSwapBuffers(a_window);
 		//System.out.println("redrawn");
 	}
@@ -431,7 +432,7 @@ public final class HardwareRenderer implements Renderer {
 	private void paintScene() {
 		//activate shader program and update projection matrix and send projection matrix to GPU
 		shaderProgram.bind();
-		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
+		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f); 
 		shaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
 		shaderProgram.uploadInteger("texture_sampler", 0); //sample from texture unit 0.
 		transformManager.updateViewMatrix(camera);
@@ -458,6 +459,28 @@ public final class HardwareRenderer implements Renderer {
 			m.getMesh().draw();
 		} 
 		shaderProgram.unbind();
+	}
+	
+	/**
+	 * Draws the skybox
+	 */
+	private void paintSkybox() {
+		skyBoxShaderProgram.bind();
+		
+		skyBoxShaderProgram.uploadInteger("texture_sampler", 0);
+		transformManager.updateProjectionMatrix(this.fov, WIDTH, HEIGHT, 0.1f, 100.0f);
+		skyBoxShaderProgram.uploadMat4f("projectionMatrix", transformManager.projectionMatrix);
+		transformManager.updateViewMatrix(camera);
+		//modify view matrix so it ignores the position in the matrix multiplication.
+		transformManager.viewMatrix.m30(0.0f);
+		transformManager.viewMatrix.m31(0.0f);
+		transformManager.viewMatrix.m32(0.0f);
+		transformManager.updateWorldAndViewMatrix(skybox.getPosition(), skybox.getRotation(), skybox.getScale());
+		skyBoxShaderProgram.uploadMat4f("worldViewMatrix", transformManager.worldAndViewMatrix);
+		skyBoxShaderProgram.uploadVec3f("ambientLight", ambientLight);
+		skybox.getMesh().draw();
+		
+		skyBoxShaderProgram.unbind();
 	}
 	
 	/**
