@@ -1,6 +1,6 @@
 # Connect3D
  Connect3D is a simple 4 in a row game.
- The objective is to make four in a row with your pieces, while prevent other players from doing the same.
+ The objective is to make four in a row with your pieces, while preventing other players from doing the same.
  Connect3D offers 2 - 4 player games and the ability to set the size of the board.
 
  It follows a traditional Model View Controller architecture.
