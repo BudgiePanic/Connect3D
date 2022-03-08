@@ -34,9 +34,8 @@ As such this is how you can set up an Eclipse project to run Connect3D.
 
 ## Acknowledgements
 
-[The sky box texture is here](http://www.custommapmakers.org/skyboxes/zips/ely_hills.zip)
-[I made extensive use of this book while writing Connect3D](https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/)
-[This resource was also useful for learning the basics of OpenGL](https://learnopengl.com/)
-[Some models from lwjglbook were used](https://github.com/lwjglgamedev/lwjglbook)
-
-I made the sphere model using blender.
+- [The sky box texture is here](http://www.custommapmakers.org/skyboxes/zips/ely_hills.zip)
+- [I made extensive use of this book while writing Connect3D](https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/)
+- [This resource was also useful for learning the basics of OpenGL](https://learnopengl.com/)
+- [Some models from lwjglbook were used](https://github.com/lwjglgamedev/lwjglbook)
+- I made the sphere model using blender.
