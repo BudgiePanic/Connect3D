@@ -19,7 +19,7 @@ As such this is how you can set up an Eclipse project to run Connect3D.
 
  1. First clone the source files into an Eclipse project.
  2. Connect3D uses LWJGL v3.3.0 to access OpenGL. [The download page for lwjgl is here](https://www.lwjgl.org/customize) the _Minimal OpenGL_ preset should be sufficient. Ensure the JOML Addon is selected. Use the _ZIP Bundle_ mode. Select your platform in the Natives section.  
- 3. [This excellent resource](https://github.com/LWJGL/lwjgl3-wiki/wiki/1.2.-Install) explains how to configure Eclipse to LWJGL.
+ 3. [This excellent resource](https://github.com/LWJGL/lwjgl3-wiki/wiki/1.2.-Install) explains how to configure Eclipse to use LWJGL.
  4. When Eclipse has been configured to use LWJGL you can run the Main method from Connect3DMain package.
 
 ### Game controls
