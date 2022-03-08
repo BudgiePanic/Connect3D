@@ -29,7 +29,8 @@ As such this is how you can set up an Eclipse project to run Connect3D.
 
  When using the Hardware renderer, move the mouse to the column you want to place a piece in.
  The right mouse button can be dragged to pan around the board.
- The backspace key toggles the debug view that shows where you can place pieces.
+ The backspace key toggles the debug view that shows possible piece placements.
+ Scroll up or down to zoom in and out.
 
 ## Acknowledgements
 
